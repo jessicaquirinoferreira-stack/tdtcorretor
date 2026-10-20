@@ -1,0 +1,6 @@
+{
+  "name": "TFT Corretor Imobiliário",
+  "description": "Site oficial do corretor imobiliário Thiago Teixeira (TFT Corretor Imobiliário). Compra, venda, locação, captação e intermediação imobiliária de alto padrão em Minas Gerais.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

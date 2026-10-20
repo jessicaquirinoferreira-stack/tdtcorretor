@@ -1,0 +1,85 @@
+{
+  "entities": {
+    "Property": {
+      "title": "Property",
+      "description": "Imóvel cadastrado no portfólio da TFT Corretor Imobiliário",
+      "type": "object",
+      "properties": {
+        "slug": { "type": "string" },
+        "title": { "type": "string" },
+        "type": { "type": "string" },
+        "purpose": { "type": "string" },
+        "price": { "type": "string" },
+        "area": { "type": "string" },
+        "description": { "type": "string" },
+        "coverImage": { "type": "string" },
+        "status": { "type": "string", "enum": ["published", "draft", "archived"] },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["slug", "title", "type", "purpose", "price", "area", "description", "coverImage", "status"]
+    },
+    "Lead": {
+      "title": "Lead",
+      "description": "Contato ou solicitação de visita enviada por um visitante",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "maxLength": 100 },
+        "phone": { "type": "string", "maxLength": 30 },
+        "email": { "type": "string", "maxLength": 100 },
+        "type": { "type": "string" },
+        "message": { "type": "string", "maxLength": 2000 },
+        "preferredContact": { "type": "string" },
+        "status": { "type": "string", "enum": ["novo", "em_atendimento", "concluido"] },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["name", "phone", "type", "status", "createdAt"]
+    },
+    "LandingPage": {
+      "title": "LandingPage",
+      "description": "Landing page de alta conversão de empreendimento",
+      "type": "object",
+      "properties": {
+        "slug": { "type": "string" },
+        "propertyId": { "type": "string" },
+        "headline": { "type": "string" },
+        "subheadline": { "type": "string" },
+        "published": { "type": "boolean" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["slug", "propertyId", "headline", "published"]
+    },
+    "SiteConfig": {
+      "title": "SiteConfig",
+      "description": "Configurações gerais e dados de contato da imobiliária",
+      "type": "object",
+      "properties": {
+        "brokerName": { "type": "string" },
+        "brandName": { "type": "string" },
+        "slogan": { "type": "string" },
+        "email": { "type": "string" },
+        "phoneDisplay": { "type": "string" },
+        "whatsappNumber": { "type": "string" },
+        "instagramUrl": { "type": "string" }
+      },
+      "required": ["brokerName", "brandName", "email", "whatsappNumber"]
+    }
+  },
+  "firestore": {
+    "/properties/{propertyId}": {
+      "schema": { "$ref": "#/entities/Property" },
+      "description": "Catálogo de imóveis e propriedades disponíveis"
+    },
+    "/leads/{leadId}": {
+      "schema": { "$ref": "#/entities/Lead" },
+      "description": "Contatos captados pelo site e solicitações de visitas"
+    },
+    "/landing_pages/{landingId}": {
+      "schema": { "$ref": "#/entities/LandingPage" },
+      "description": "Páginas dedicadas a empreendimentos e lançamentos"
+    },
+    "/site_config/{configId}": {
+      "schema": { "$ref": "#/entities/SiteConfig" },
+      "description": "Configuração da marca e canais de contato"
+    }
+  }
+}

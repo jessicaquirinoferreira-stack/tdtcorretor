@@ -1,0 +1,79 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper Functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'jessicaq2204@gmail.com' ||
+        request.auth.token.email == 'admin@x.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidLead(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() <= 100
+        && data.phone is string && data.phone.size() > 0 && data.phone.size() <= 30
+        && data.type is string && data.type.size() <= 50
+        && data.status is string && (data.status == 'novo' || data.status == 'em_atendimento' || data.status == 'concluido');
+    }
+
+    function isValidProperty(data) {
+      return data.title is string && data.title.size() > 0 && data.title.size() <= 200
+        && data.type is string && data.type.size() <= 100
+        && data.purpose is string && data.purpose.size() <= 50;
+    }
+
+    // Properties Collection - Public Read, Admin Write
+    match /properties/{propertyId} {
+      allow read: if isValidId(propertyId);
+      allow create, update: if isSignedIn() && isValidId(propertyId) && isValidProperty(incoming());
+      allow delete: if isSignedIn() && isValidId(propertyId);
+    }
+
+    // Leads Collection - Public Create with strict validation, Authenticated Read/Manage
+    match /leads/{leadId} {
+      allow create: if isValidId(leadId) && isValidLead(incoming());
+      allow read, update, delete: if isSignedIn() && isValidId(leadId);
+    }
+
+    // Landing Pages - Public Read, Admin Write
+    match /landing_pages/{landingId} {
+      allow read: if isValidId(landingId);
+      allow write: if isSignedIn() && isValidId(landingId);
+    }
+
+    // Site Config - Public Read, Admin Write
+    match /site_config/{configId} {
+      allow read: if isValidId(configId);
+      allow write: if isSignedIn() && isValidId(configId);
+    }
+
+    // Admins Collection
+    match /admins/{adminId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+  }
+}

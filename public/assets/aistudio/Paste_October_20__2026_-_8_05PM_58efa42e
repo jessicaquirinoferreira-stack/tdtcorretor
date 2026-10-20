@@ -1,0 +1,828 @@
+# PROMPT DEFINITIVO — SITE IMOBILIÁRIO PREMIUM TFT CORRETOR IMOBILIÁRIO
+
+## 1. OBJETIVO PRINCIPAL
+
+Crie um SITE COMPLETO, moderno, sofisticado e profissional para o corretor imobiliário TFT Corretor Imobiliário.
+
+**O projeto é um SITE INSTITUCIONAL E COMERCIAL DE IMÓVEIS, NÃO UM SISTEMA, NÃO UM SOFTWARE DE GESTÃO E NÃO UM DASHBOARD COMO PÁGINA PRINCIPAL.**
+
+O resultado deve ser semelhante a um site imobiliário premium desenvolvido por uma agência de design especializada em imóveis de alto padrão, com excelente apresentação visual, navegação intuitiva, fotografias de imóveis, páginas comerciais, conteúdo institucional e contato estratégico pelo WhatsApp.
+
+O visitante deve sentir que está acessando o site oficial de um corretor imobiliário profissional, e não um template genérico, uma plataforma administrativa ou uma página gerada automaticamente por inteligência artificial.
+
+O site público deve ser o foco absoluto do desenvolvimento.
+
+O painel administrativo será apenas uma área auxiliar, acessada por um link discreto no rodapé, para permitir que o proprietário atualize o conteúdo do site sem precisar alterar o código.
+
+Não transformar a homepage em dashboard. Não mostrar tabelas administrativas, gráficos de vendas, indicadores de leads ou menus de software para os visitantes.
+
+## 2. IDENTIDADE DA MARCA
+
+Nome: TFT Corretor Imobiliário.
+
+Responsável: Thiago Teixeira.
+
+E-mail: tft.corretorimobiliario@gmail.com
+
+WhatsApp: +55 31 98966-8814
+
+Instagram:
+https://www.instagram.com/tftcorretorimobiliario
+
+Logo oficial:
+https://i.postimg.cc/mg44xzyy/Whats-App-Image-2026-10-20-at-18-22-09.jpg
+
+Frase principal da marca:
+
+“Seu sonho, meu compromisso.”
+
+Posicionamento:
+
+- Atendimento personalizado.
+- Compra e venda de imóveis.
+- Locação.
+- Captação de imóveis.
+- Intermediação imobiliária.
+- Orientação durante a negociação.
+- Transparência e confiança.
+- Acompanhamento profissional.
+- Apoio na organização documental.
+- Orientação sobre financiamento imobiliário.
+
+Utilize o PDF do portfólio profissional anexado como fonte para o conteúdo institucional, respeitando as informações efetivamente presentes no documento.
+
+Analise a logo e as imagens do PDF para determinar as cores, o estilo visual, a tipografia e a linguagem estética.
+
+Não invente número de CRECI, depoimentos, avaliações, certificações, quantidade de clientes, quantidade de vendas ou resultados comerciais.
+
+## 3. DIREÇÃO DE ARTE
+
+Crie um site com aparência premium, contemporânea e exclusiva.
+
+A identidade visual deve ser extraída da logo oficial e do portfólio PDF.
+
+Antes de desenvolver o layout, identifique as cores predominantes dos arquivos e crie uma paleta consistente para todo o site.
+
+Utilize:
+
+- Fundos modernos com elementos abstratos arquitetônicos.
+- Fotografias grandes e de alta qualidade.
+- Tipografia elegante.
+- Títulos fortes e expressivos.
+- Espaçamentos generosos.
+- Composições editoriais.
+- Áreas com contraste entre tons claros e escuros.
+- Gradientes discretos derivados da identidade visual.
+- Linhas finas e detalhes geométricos.
+- Camadas visuais que transmitam profundidade.
+- Cards sofisticados para os imóveis.
+- Botões elegantes.
+- Ícones consistentes.
+- Animações suaves.
+- Efeitos de entrada durante a rolagem.
+- Elementos visuais inspirados em arquitetura, fachadas e formas geométricas.
+
+O resultado não pode parecer um painel de administração, uma loja virtual genérica ou um site corporativo sem personalidade.
+
+Não utilizar excesso de cards repetidos, excesso de gradientes, textos genéricos, elementos decorativos exagerados ou animações que prejudiquem a navegação.
+
+O design deve ser visualmente marcante, com acabamento profissional e identidade própria.
+
+## 4. TECNOLOGIAS
+
+Desenvolva o site com tecnologias modernas e compatíveis com publicação na Vercel.
+
+Preferências:
+
+- Next.js.
+- React.
+- TypeScript.
+- Tailwind CSS.
+- Componentes reutilizáveis.
+- Lucide React para ícones.
+- Motion para animações.
+- GSAP apenas para efeitos complexos que realmente agreguem valor.
+- Firebase Authentication para proteger a área administrativa.
+- Cloud Firestore para armazenar os imóveis, configurações e contatos.
+- Vercel Blob para armazenar fotografias e anexos enviados pelo administrador.
+
+Utilize bibliotecas disponíveis no GitHub, verificando documentação, licença, compatibilidade e manutenção.
+
+Referências:
+
+https://github.com/motiondivision/motion
+
+https://github.com/shadcn-ui/ui
+
+https://github.com/lucide-icons/lucide
+
+https://github.com/greensock/GSAP
+
+Não instale bibliotecas desnecessárias. Priorize velocidade, estabilidade, segurança e excelente apresentação visual.
+
+## 5. ESTRUTURA DO SITE PÚBLICO
+
+Crie as seguintes páginas:
+
+- `/` — Página inicial.
+- `/imoveis` — Todos os imóveis.
+- `/imoveis/[slug]` — Página individual de cada imóvel.
+- `/comprar` — Página para quem deseja comprar.
+- `/vender` — Página para proprietários que desejam vender.
+- `/alugar` — Página para locação.
+- `/anunciar-imovel` — Página para captar imóveis.
+- `/financiamento` — Simuladores de financiamento.
+- `/servicos` — Serviços imobiliários.
+- `/sobre` — Apresentação do corretor.
+- `/contato` — Contato.
+- `/landing/[slug]` — Landing pages de empreendimentos.
+- `/privacidade` — Política de privacidade.
+- `/termos` — Termos de uso.
+- `/admin` — Área administrativa secundária.
+
+Todas as páginas públicas devem compartilhar a mesma identidade visual, o mesmo cabeçalho, o mesmo rodapé e os mesmos padrões de navegação.
+
+## 6. CABEÇALHO
+
+Crie um cabeçalho elegante e responsivo.
+
+Elementos:
+
+- Logo oficial.
+- Início.
+- Imóveis.
+- Comprar.
+- Vender.
+- Alugar.
+- Financiamento.
+- Sobre.
+- Contato.
+- Botão de WhatsApp.
+
+O cabeçalho deve combinar com o hero principal.
+
+Pode começar transparente sobre a imagem principal e adquirir um fundo sólido ou translúcido ao rolar a página, desde que o texto permaneça legível.
+
+No celular, utilize um menu compacto, moderno e fácil de usar.
+
+O cabeçalho deve transmitir profissionalismo e facilitar o acesso às páginas mais importantes.
+
+## 7. HOMEPAGE — PÁGINA INICIAL
+
+A homepage precisa ser visualmente impressionante, com fotografia de destaque, composição premium e chamadas comerciais bem posicionadas.
+
+### 7.1. Hero principal
+
+Utilize uma fotografia arquitetônica de alto impacto, preferencialmente de um imóvel real cadastrado.
+
+A imagem deve ocupar uma área generosa da primeira tela.
+
+Título principal:
+
+**“Seu próximo endereço começa com uma boa escolha.”**
+
+Subtítulo:
+
+“Comprar, vender ou alugar um imóvel merece atenção aos detalhes. Conte com atendimento personalizado, transparência e acompanhamento em cada etapa.”
+
+Botões:
+
+- Encontrar meu imóvel.
+- Quero vender meu imóvel.
+- Falar com Thiago.
+
+O botão “Falar com Thiago” deve abrir o WhatsApp comercial.
+
+Crie fundos abstratos elegantes, profundidade visual, tipografia expressiva e animações discretas.
+
+Não utilize imagens genéricas como se fossem fotografias de imóveis realmente disponíveis.
+
+### 7.2. Busca de imóveis
+
+Logo abaixo do hero, crie uma busca sofisticada.
+
+Filtros:
+
+- Comprar, alugar ou ambas as finalidades.
+- Tipo de imóvel.
+- Cidade.
+- Bairro.
+- Quantidade de quartos.
+- Vagas.
+- Faixa de preço, quando disponível.
+
+Botão:
+
+“Encontrar imóveis”.
+
+Os filtros devem pesquisar os imóveis efetivamente cadastrados.
+
+Quando um filtro não possuir dados disponíveis, não invente resultados.
+
+### 7.3. Imóveis em destaque
+
+Crie uma seção editorial com o título:
+
+“Imóveis que podem ser o começo de uma nova história.”
+
+Apresente os imóveis em cards sofisticados.
+
+Cada card deve ter:
+
+- Fotografia principal.
+- Nome do imóvel.
+- Tipo.
+- Localização conhecida.
+- Área.
+- Quartos.
+- Banheiros.
+- Vagas.
+- Características relevantes.
+- Botão “Conhecer imóvel”.
+- Botão “Consultar pelo WhatsApp”.
+
+Mostre somente as características cadastradas.
+
+Se o preço não estiver disponível, exiba:
+
+**“Valor a consultar”.**
+
+Não invente valores, descontos ou condições comerciais.
+
+Inclua botão “Ver todos os imóveis”.
+
+### 7.4. Apresentação do corretor
+
+Crie uma seção elegante para apresentar Thiago Teixeira.
+
+Utilize o conteúdo do PDF para transmitir profissionalismo, compromisso, transparência e atendimento personalizado.
+
+Título sugerido:
+
+“Mais do que encontrar imóveis, ajudar você a fazer boas escolhas.”
+
+Texto:
+
+“Cada negociação imobiliária envolve planos, expectativas e decisões importantes. Meu compromisso é oferecer um atendimento próximo, transparente e organizado, acompanhando você durante as etapas da negociação.”
+
+Inclua uma fotografia profissional apenas se houver uma imagem real disponível. Caso contrário, não invente uma pessoa ou apresente uma imagem genérica como se fosse o corretor.
+
+Botão:
+
+“Conheça meu trabalho”.
+
+### 7.5. Serviços imobiliários
+
+Apresente os serviços em uma composição visual moderna:
+
+- Comprar um imóvel.
+- Vender um imóvel.
+- Alugar um imóvel.
+- Anunciar uma propriedade.
+- Avaliar oportunidades.
+- Intermediar negociações.
+- Receber orientação sobre financiamento.
+- Organizar etapas documentais.
+
+Cada serviço deverá possuir um texto curto, uma imagem ou ícone apropriado e uma chamada para ação.
+
+Os botões devem direcionar para a página correspondente ou abrir uma conversa contextualizada no WhatsApp.
+
+### 7.6. Seção para compradores
+
+Título:
+
+“O imóvel certo começa com uma busca bem orientada.”
+
+Explique que o atendimento considera necessidades, localização desejada, características e orçamento informado pelo interessado.
+
+Botão:
+
+“Quero encontrar meu imóvel”.
+
+### 7.7. Seção para proprietários
+
+Título:
+
+“Seu imóvel merece ser apresentado da melhor forma.”
+
+Apresente a possibilidade de solicitar atendimento para venda ou locação.
+
+Explique a importância de boas fotografias, descrição organizada, divulgação e acompanhamento da negociação, conforme o conteúdo do portfólio.
+
+Botão:
+
+“Quero anunciar meu imóvel”.
+
+### 7.8. Como funciona o atendimento
+
+Crie uma seção visual com quatro etapas:
+
+1. Conversa inicial.
+2. Entendimento das necessidades.
+3. Seleção e apresentação das opções.
+4. Acompanhamento da negociação.
+
+Utilize uma composição moderna, com linhas, numeração elegante e animações discretas.
+
+### 7.9. Financiamento imobiliário
+
+Crie uma seção para apresentar os simuladores bancários oficiais.
+
+Título:
+
+“Planeje sua compra com mais informação.”
+
+Texto:
+
+“Consulte os canais oficiais das instituições financeiras para conhecer as possibilidades de financiamento imobiliário.”
+
+Inclua botão:
+
+“Conhecer os simuladores”.
+
+### 7.10. CTA final
+
+Crie uma seção de encerramento visualmente marcante.
+
+Título:
+
+“Seu próximo capítulo pode começar com uma conversa.”
+
+Texto:
+
+“Conte o que você procura. Vamos conversar sobre as possibilidades.”
+
+Botões:
+
+- Encontrar imóvel.
+- Anunciar imóvel.
+- Falar pelo WhatsApp.
+
+## 8. CATÁLOGO DE IMÓVEIS
+
+Crie uma página pública completa para apresentar todos os imóveis disponíveis.
+
+O catálogo deve priorizar fotografias, facilidade de busca e informações importantes.
+
+Não deve parecer uma tabela administrativa.
+
+Implemente:
+
+- Busca por texto.
+- Filtros.
+- Ordenação.
+- Cards responsivos.
+- Paginação quando necessária.
+- Estados de carregamento.
+- Mensagem quando não houver resultados.
+- Botão para limpar filtros.
+- Botão para consultar o corretor.
+
+Cada card deve permitir abrir a página individual do imóvel.
+
+Utilize imagens otimizadas e respeite as proporções das fotografias.
+
+Não altere as imagens de maneira que distorça a aparência real do imóvel.
+
+## 9. PÁGINAS INDIVIDUAIS DOS IMÓVEIS
+
+Cada imóvel deverá ter uma página exclusiva, com apresentação visual de qualidade.
+
+Elementos:
+
+- Galeria de fotografias.
+- Imagem principal em destaque.
+- Miniaturas.
+- Visualização ampliada.
+- Título.
+- Localização disponível.
+- Área.
+- Quartos.
+- Suítes.
+- Banheiros.
+- Vagas.
+- Descrição.
+- Características.
+- Valor a consultar.
+- Botão de WhatsApp.
+- Botão para agendar visita.
+- Formulário de interesse.
+- Compartilhamento.
+- Imóveis relacionados.
+
+Campos sem informação devem ficar ocultos ou aparecer como pendentes apenas no painel administrativo.
+
+O site público não deve apresentar campos vazios, dados falsos ou descrições improvisadas.
+
+## 10. CADASTRO INICIAL DOS DOIS IMÓVEIS
+
+Cadastre os dois empreendimentos a seguir, utilizando as fotografias fornecidas.
+
+### IMÓVEL 1 — SÍTIO DE 1.800 M²
+
+Nome: Sítio de 1.800 m².
+
+Tipo: Sítio / propriedade rural.
+
+Área informada: 1.800 m².
+
+Preço: Valor a consultar.
+
+Localização: deixar editável até confirmação.
+
+Descrição inicial:
+
+“Propriedade rural com área informada de 1.800 m². Entre em contato para conhecer os detalhes, consultar a localização e verificar a disponibilidade.”
+
+Fotografias, nesta ordem:
+
+1. https://i.postimg.cc/jjjGKzwv/Whats-App-Image-2026-10-20-at-18-16-56.jpg
+2. https://i.postimg.cc/0NNLxpML/Whats-App-Image-2026-10-20-at-18-16-57.jpg
+3. https://i.postimg.cc/MGGhxyMs/Whats-App-Image-2026-10-20-at-18-16-57-(1).jpg
+4. https://i.postimg.cc/jjjGKzw3/Whats-App-Image-2026-10-20-at-18-16-57-(2).jpg
+5. https://i.postimg.cc/255Pm4bc/Whats-App-Image-2026-10-20-at-18-16-57-(3).jpg
+6. https://i.postimg.cc/R00j9c62/Whats-App-Image-2026-10-20-at-18-16-57-(4).jpg
+7. https://i.postimg.cc/433rZz7D/Whats-App-Image-2026-10-20-at-18-16-57-(5).jpg
+8. https://i.postimg.cc/XvvT3wGc/Whats-App-Image-2026-10-20-at-18-16-58.jpg
+9. https://i.postimg.cc/wBbnB7L0/Whats-App-Image-2026-10-20-at-18-16-58-(1).jpg
+10. https://i.postimg.cc/hG3NGfT2/Whats-App-Image-2026-10-20-at-18-16-58-(2).jpg
+11. https://i.postimg.cc/fbb6Zxtc/Whats-App-Image-2026-10-20-at-18-16-58-(3).jpg
+12. https://i.postimg.cc/pddgxDhJ/Whats-App-Image-2026-10-20-at-18-16-58-(4).jpg
+13. https://i.postimg.cc/s22typQm/Whats-App-Image-2026-10-20-at-18-16-59.jpg
+14. https://i.postimg.cc/1zzLPpnK/Whats-App-Image-2026-10-20-at-18-16-59-(1).jpg
+
+### IMÓVEL 2 — CASA GEMINADA DUPLEX NO GIOVANI
+
+Nome: Casa Geminada Duplex — Giovani.
+
+Cidade informada: Coronel Fabriciano, Minas Gerais.
+
+Características:
+
+- 3 quartos.
+- 1 suíte.
+- Sala.
+- Cozinha.
+- Banheiro.
+- Garagem.
+
+Preço: Valor a consultar.
+
+Endereço completo: deixar editável até confirmação.
+
+Descrição:
+
+“Casa geminada duplex em Coronel Fabriciano, na região do Giovani. O imóvel possui três quartos, sendo uma suíte, sala, cozinha, banheiro e garagem. Consulte condições, localização detalhada, disponibilidade e agende uma visita.”
+
+Fotografias, nesta ordem:
+
+1. https://i.postimg.cc/MTQ3KtWQ/Whats-App-Image-2026-10-20-at-18-24-11.jpg
+2. https://i.postimg.cc/856XPw1z/Whats-App-Image-2026-10-20-at-18-24-11-(1).jpg
+3. https://i.postimg.cc/DZXpy524/Whats-App-Image-2026-10-20-at-18-24-11-(2).jpg
+4. https://i.postimg.cc/bJtVNLz2/Whats-App-Image-2026-10-20-at-18-24-11-(3).jpg
+5. https://i.postimg.cc/vmjSsCd8/Whats-App-Image-2026-10-20-at-18-24-12.jpg
+6. https://i.postimg.cc/25JXDgfz/Whats-App-Image-2026-10-20-at-18-24-12-(1).jpg
+7. https://i.postimg.cc/vmjSsCdm/Whats-App-Image-2026-10-20-at-18-24-12-(2).jpg
+8. https://i.postimg.cc/SK5thHpx/Whats-App-Image-2026-10-20-at-18-24-12-(3).jpg
+9. https://i.postimg.cc/k5ZhmLd4/Whats-App-Image-2026-10-20-at-18-24-12-(4).jpg
+10. https://i.postimg.cc/RFHpVGM0/Whats-App-Image-2026-10-20-at-18-24-13.jpg
+11. https://i.postimg.cc/tgfmj8H1/Whats-App-Image-2026-10-20-at-18-24-13-(1).jpg
+12. https://i.postimg.cc/GpNSC61T/Whats-App-Image-2026-10-20-at-18-24-13-(2).jpg
+13. https://i.postimg.cc/vmjSsCd6/Whats-App-Image-2026-10-20-at-18-24-13-(3).jpg
+14. https://i.postimg.cc/N0VPcZwH/Whats-App-Image-2026-10-20-at-18-24-13-(4).jpg
+15. https://i.postimg.cc/0QwX2Z8b/Whats-App-Image-2026-10-20-at-18-24-14.jpg
+16. https://i.postimg.cc/zBg2XpJB/Whats-App-Image-2026-10-20-at-18-24-14-(1).jpg
+
+Analise as imagens para selecionar a melhor capa e organizar a galeria. Não invente características não confirmadas pelas fotografias ou pelo texto.
+
+As imagens devem ficar associadas ao imóvel correto.
+
+## 11. BOTÕES E CONVERSÃO PELO WHATSAPP
+
+Número oficial:
+
++5531989668814
+
+Link base:
+
+https://wa.me/5531989668814
+
+Implemente CTAs em todo o site, de maneira elegante e estratégica.
+
+Locais prioritários:
+
+- Cabeçalho.
+- Hero.
+- Cards de imóveis.
+- Página individual.
+- Galeria.
+- Seção de serviços.
+- Seção para compradores.
+- Seção para proprietários.
+- Financiamento.
+- Landing pages.
+- Rodapé.
+
+Mensagens sugeridas:
+
+Compra:
+“Olá, Thiago! Acessei seu site e gostaria de ajuda para encontrar um imóvel para comprar.”
+
+Venda:
+“Olá, Thiago! Gostaria de conversar sobre a venda do meu imóvel.”
+
+Locação:
+“Olá, Thiago! Gostaria de conhecer as opções de imóveis para alugar.”
+
+Imóvel específico:
+“Olá, Thiago! Tenho interesse no imóvel [nome do imóvel]. Poderia me passar mais informações?”
+
+Agendamento:
+“Olá, Thiago! Gostaria de agendar uma visita ao imóvel [nome do imóvel].”
+
+Financiamento:
+“Olá, Thiago! Gostaria de conversar sobre as possibilidades de financiamento imobiliário.”
+
+Os botões devem gerar links válidos com as mensagens devidamente codificadas.
+
+Implemente um botão flutuante de WhatsApp que não cubra conteúdos ou controles importantes.
+
+Não registre um contato como confirmado apenas porque o usuário clicou para abrir o WhatsApp.
+
+## 12. FINANCIAMENTO IMOBILIÁRIO
+
+Crie uma página pública chamada “Simuladores de financiamento”.
+
+Apresente seis cards sofisticados, com as logos oficiais dos bancos e botões que direcionem para os sites externos.
+
+Santander:
+https://www.negociosimobiliarios.santander.com.br/negociosimobiliarios/#/dados-pessoais
+
+Itaú:
+https://www.itau.com.br/emprestimos-financiamentos/credito-imobiliario
+
+Caixa:
+https://simuladorhabitacao.caixa.gov.br/home
+
+Banco do Brasil:
+https://cim-simulador-imovelproprio.apps.bb.com.br/simulacao-imobiliario/posso-contratar
+
+Banrisul:
+https://www.banrisul.com.br/brz/link/brzwswhn.html
+
+Bradesco:
+https://banco.bradesco/html/classic/produtos-servicos/emprestimo-e-financiamento/encontre-seu-credito/simuladores-imoveis.shtm
+
+Cada card deverá conter:
+
+- Logo oficial.
+- Nome da instituição.
+- Breve texto explicativo.
+- Botão “Acessar simulador”.
+- Link para atendimento via WhatsApp.
+
+Não invente logos e não apresente a TFT como representante oficial dos bancos.
+
+Inclua o aviso de que taxas, aprovação e condições dependem da instituição financeira.
+
+## 13. CONTEÚDO INSTITUCIONAL EXTRAÍDO DO PDF
+
+Organize o conteúdo do portfólio nas páginas adequadas.
+
+Inclua:
+
+- Apresentação profissional.
+- Compra.
+- Venda.
+- Locação.
+- Captação.
+- Comunicação imobiliária.
+- Preparação de imóveis.
+- Visitas.
+- Intermediação.
+- Organização documental.
+- Financiamento.
+- Análise de mercado.
+- Tipos de imóveis.
+- Investimento imobiliário.
+- Atendimento personalizado.
+- Compromisso profissional.
+
+Aplique esse conteúdo em blocos editoriais elegantes, com fotografias, ilustrações e composição visual.
+
+Não coloque todo o conteúdo do PDF na homepage. Distribua as informações nas páginas de serviços, sobre, compra, venda, locação e financiamento.
+
+As plantas ilustrativas do documento devem ser identificadas como conceituais, não como plantas técnicas aprovadas.
+
+## 14. LANDING PAGES DE EMPREENDIMENTOS
+
+Crie uma função administrativa secundária para gerar landing pages a partir dos imóveis cadastrados.
+
+O administrador deverá selecionar um imóvel e clicar em “Criar landing page”.
+
+O sistema deverá aproveitar os dados e fotografias já existentes.
+
+A landing page deverá conter:
+
+- Hero com fotografia.
+- Título.
+- Descrição.
+- Características.
+- Galeria.
+- Valor a consultar.
+- Botão de WhatsApp.
+- Formulário de interesse.
+- Botão de agendamento.
+- Compartilhamento.
+- Rodapé da marca.
+
+Crie páginas públicas em `/landing/[slug]`.
+
+Permita editar, visualizar, publicar, despublicar e copiar o link público.
+
+O layout da landing page deve ser visualmente diferente da página comum do imóvel, com foco em apresentar aquele empreendimento e converter interessados.
+
+Não invente dados para preencher campos ausentes.
+
+## 15. PAINEL ADMINISTRATIVO SECUNDÁRIO
+
+O painel não deve dominar o projeto.
+
+Ele deverá ser acessado exclusivamente pelo link discreto “Painel administrativo”, centralizado na parte inferior do rodapé.
+
+Crie uma área protegida por autenticação para administrar:
+
+- Imóveis.
+- Fotografias.
+- Descrições.
+- Valores.
+- Publicação.
+- Leads.
+- Landing pages.
+- Links sociais.
+- WhatsApp.
+- Simuladores.
+- Textos institucionais.
+- Logo.
+- Cores.
+- Configurações gerais.
+
+Login inicial solicitado:
+
+E-mail: admin@x.com
+
+Senha inicial: admin4321
+
+Implemente o login com Firebase Authentication, sem colocar a senha no frontend ou em código público.
+
+Trate a senha inicial como temporária e exija sua substituição antes de disponibilizar o site publicamente.
+
+Se a criação automática da conta não for possível, forneça instruções para provisioná-la com segurança.
+
+O painel deverá ser funcional, mas não transformar o site público em um sistema administrativo.
+
+## 16. FIREBASE
+
+Utilize Firebase Authentication e Cloud Firestore para armazenar os dados reais.
+
+Implemente:
+
+- Imóveis.
+- Leads.
+- Landing pages.
+- Configurações do site.
+- Links sociais.
+- Simuladores bancários.
+- Metadados das fotografias.
+
+As páginas públicas devem consultar os imóveis publicados.
+
+Os formulários devem registrar os contatos com segurança.
+
+As regras do Firestore devem impedir leitura pública de leads e alterações não autorizadas.
+
+Não use localStorage como banco de dados principal.
+
+## 17. VERCEL BLOB
+
+Utilize Vercel Blob para armazenar imagens enviadas pelo painel.
+
+Implemente upload real, seleção de capa, organização da galeria e exclusão controlada.
+
+Valide formatos, tamanho e permissões.
+
+O token de escrita deve existir somente no servidor.
+
+Crie um `.env.example` com a estrutura das variáveis necessárias e documente como configurar os valores reais na Vercel.
+
+Não invente chaves nem exponha segredos.
+
+## 18. SEO
+
+Implemente:
+
+- Títulos e descrições por página.
+- URLs amigáveis.
+- Sitemap.
+- Robots.txt.
+- Canonical URLs.
+- Open Graph.
+- Imagens de compartilhamento.
+- Metadados por imóvel.
+- Dados estruturados apropriados.
+- Otimização das fotografias.
+- Links internos.
+
+Cada imóvel deve ter uma URL própria e uma apresentação adequada quando compartilhado pelo WhatsApp.
+
+## 19. RESPONSIVIDADE E PERFORMANCE
+
+O site deve funcionar perfeitamente em computadores, notebooks, tablets e celulares.
+
+Implemente:
+
+- Layout responsivo.
+- Fotografias otimizadas.
+- Carregamento progressivo.
+- Lazy loading.
+- Estados de carregamento.
+- Tratamento de erros.
+- Formulários acessíveis.
+- Contraste adequado.
+- Navegação por teclado.
+- Compatibilidade com movimento reduzido.
+
+As animações não devem comprometer a velocidade ou impedir o uso do site.
+
+## 20. RODAPÉ
+
+Crie um rodapé sofisticado com:
+
+- Logo.
+- Nome da marca.
+- E-mail.
+- WhatsApp.
+- Instagram.
+- Links principais.
+- Serviços.
+- Financiamento.
+- Privacidade.
+- Termos de uso.
+
+Centralizado na parte inferior, inclua o link discreto:
+
+“Painel administrativo”.
+
+Não exiba senhas, informações privadas ou dados de leads no rodapé.
+
+## 21. CONFIGURAÇÃO PARA PUBLICAÇÃO
+
+Prepare o site para implantação na Vercel.
+
+Crie `.env.example` com as variáveis necessárias para Firebase e Blob, sem segredos reais.
+
+Documente as etapas para:
+
+- Conectar o Firebase.
+- Configurar autenticação.
+- Configurar Firestore.
+- Revisar regras de segurança.
+- Criar o Blob Store.
+- Adicionar as variáveis de ambiente.
+- Fazer o deploy.
+- Configurar o domínio.
+- Testar os formulários.
+- Testar o upload.
+- Testar o WhatsApp.
+- Testar as landing pages.
+
+Não declare que o site está publicado ou que os serviços estão conectados antes de verificar essas operações.
+
+## 22. CRITÉRIO VISUAL FINAL
+
+O resultado precisa ser um site imobiliário premium, com:
+
+- Homepage visualmente marcante.
+- Fotografias de imóveis em destaque.
+- Identidade visual extraída da logo e do PDF.
+- Animações elegantes.
+- Fundo abstrato moderno.
+- Tipografia profissional.
+- Catálogo imobiliário completo.
+- Páginas individuais dos imóveis.
+- Páginas institucionais.
+- Seção de financiamento.
+- Landing pages comerciais.
+- CTAs estratégicos.
+- WhatsApp integrado.
+- SEO.
+- Excelente experiência em celulares.
+
+O painel administrativo deve permanecer secundário e discreto.
+
+**Não entregue um sistema com aparência de software. Entregue um site público de corretor imobiliário, pronto para apresentar imóveis, transmitir confiança, fortalecer a marca e transformar visitantes em contatos pelo WhatsApp.**
+
+Comece pelo design e pela estrutura completa das páginas públicas. Depois implemente o conteúdo, o catálogo, as integrações e o painel administrativo auxiliar.
+
+Não finalize com telas estáticas ou botões decorativos. Verifique o funcionamento de cada recurso e informe claramente qualquer configuração externa ainda necessária.
