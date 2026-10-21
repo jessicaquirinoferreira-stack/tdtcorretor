@@ -22,6 +22,7 @@ import { Property } from '../types';
 import { getWhatsAppUrl, DISPLAY_PHONE } from '../utils/whatsapp';
 import { LeadModal } from '../components/LeadModal';
 import { PropertyCard } from '../components/PropertyCard';
+import { WatermarkBadge } from '../components/WatermarkBadge';
 
 interface PropertyDetailPageProps {
   property: Property;
@@ -111,6 +112,9 @@ export const PropertyDetailPage: React.FC<PropertyDetailPageProps> = ({
                 className="w-full h-full object-cover transition-opacity duration-300 cursor-pointer"
                 onClick={() => setLightboxOpen(true)}
               />
+
+              {/* Official Watermark */}
+              <WatermarkBadge position="bottom-right" size="md" opacity="opacity-90" />
 
               {/* Prev/Next overlay controls */}
               {images.length > 1 && (
@@ -384,12 +388,15 @@ export const PropertyDetailPage: React.FC<PropertyDetailPageProps> = ({
 
           {/* Active Image */}
           <div className="relative flex-1 w-full max-w-5xl flex items-center justify-center my-auto">
-            <img
-              src={images[activeImageIndex]}
-              alt={`Foto ${activeImageIndex + 1}`}
-              referrerPolicy="no-referrer"
-              className="max-h-[82vh] max-w-full object-contain rounded-lg shadow-2xl"
-            />
+            <div className="relative max-h-[82vh] max-w-full">
+              <img
+                src={images[activeImageIndex]}
+                alt={`Foto ${activeImageIndex + 1}`}
+                referrerPolicy="no-referrer"
+                className="max-h-[82vh] max-w-full object-contain rounded-lg shadow-2xl"
+              />
+              <WatermarkBadge position="bottom-right" size="lg" opacity="opacity-90" />
+            </div>
 
             {images.length > 1 && (
               <>

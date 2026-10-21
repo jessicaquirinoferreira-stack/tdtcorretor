@@ -2,6 +2,7 @@ import React from 'react';
 import { MapPin, Maximize2, Bed, Bath, Car, MessageCircle, ArrowRight, Sparkles } from 'lucide-react';
 import { Property } from '../types';
 import { getWhatsAppUrl } from '../utils/whatsapp';
+import { WatermarkBadge } from './WatermarkBadge';
 
 interface PropertyCardProps {
   property: Property;
@@ -25,6 +26,9 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({ property, onSelect }
             target.src = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80';
           }}
         />
+
+        {/* Official TFT Watermark */}
+        <WatermarkBadge position="bottom-right" size="sm" opacity="opacity-90" />
 
         {/* Gradient scrim for legibility */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60 group-hover:opacity-80 transition-opacity" />

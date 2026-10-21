@@ -2,7 +2,9 @@ export const DEFAULT_WHATSAPP_NUMBER = '5531989668814';
 export const DISPLAY_PHONE = '+55 (31) 98966-8814';
 export const BROKER_EMAIL = 'tft.corretorimobiliario@gmail.com';
 export const INSTAGRAM_URL = 'https://www.instagram.com/tftcorretorimobiliario';
-export const OFFICIAL_LOGO_URL = '/assets/aistudio/WhatsApp_Image_2026-10-20_at_18.22.09_a7c4bf86.jpeg';
+export const OFFICIAL_LOGO_URL = 'https://i.postimg.cc/DzTYyHj7/Logo-TFT-Corretor-Imobiliario-em-Verde.png';
+export const LOCAL_LOGO_URL = '/assets/logo-tft-verde.png';
+export const WATERMARK_LOGO_URL = 'https://i.postimg.cc/DzTYyHj7/Logo-TFT-Corretor-Imobiliario-em-Verde.png';
 
 export type WhatsAppContext = 
   | 'compra'

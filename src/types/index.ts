@@ -90,4 +90,6 @@ export interface SiteConfig {
   whatsappNumber: string;
   instagramUrl: string;
   cityState: string;
+  vercelBlobToken?: string;
+  watermarkLogoUrl?: string;
 }

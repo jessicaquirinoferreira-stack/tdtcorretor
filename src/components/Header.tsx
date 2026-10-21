@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { MessageCircle, Menu, X, Phone, Building2 } from 'lucide-react';
-import { getWhatsAppUrl, OFFICIAL_LOGO_URL } from '../utils/whatsapp';
+import { getWhatsAppUrl, OFFICIAL_LOGO_URL, LOCAL_LOGO_URL } from '../utils/whatsapp';
 
 interface HeaderProps {
   currentPath: string;
@@ -40,30 +40,33 @@ export const Header: React.FC<HeaderProps> = ({ currentPath, onNavigate }) => {
     <header
       className={`sticky top-0 z-40 w-full transition-all duration-300 ${
         isScrolled
-          ? 'bg-[#0B2B20]/95 backdrop-blur-md shadow-md py-3 text-white border-b border-[#1A4535]'
-          : 'bg-[#0B2B20] text-white py-4 border-b border-[#153D2F]'
+          ? 'bg-[#0B2B20]/95 backdrop-blur-md shadow-md py-2 sm:py-2.5 text-white border-b border-[#1A4535]'
+          : 'bg-[#0B2B20] text-white py-2.5 sm:py-3 border-b border-[#153D2F]'
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between gap-8">
-          {/* Zone 1: Brand Wordmark & Official Logo */}
+        <div className="flex items-center justify-between gap-6">
+          {/* Zone 1: Brand Wordmark & Official Large Transparent Logo */}
           <button
             onClick={() => handleLinkClick('/')}
-            className="flex items-center gap-3.5 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C8A251] rounded-lg group shrink-0"
+            className="flex items-center gap-3 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C8A251] rounded-xl group shrink-0 py-0.5"
+            aria-label="Ir para a página inicial"
           >
-            {/* Logo Emblem: Enlarged, sharp, perfectly readable without changing header height */}
-            <div className="relative h-13 w-13 sm:h-15 sm:w-15 rounded-full overflow-hidden border-2 border-[#C8A251] bg-black flex items-center justify-center shrink-0 shadow-md transition-all duration-300 group-hover:scale-105 group-hover:border-[#E2C481] group-hover:shadow-[#C8A251]/20 group-hover:shadow-lg">
+            {/* Official Transparent Logo - Enlarged and enhanced for dark background legibility */}
+            <div className="relative h-14 sm:h-16 md:h-17 w-auto flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-[1.03]">
               <img
                 src={OFFICIAL_LOGO_URL}
-                alt="Logo TFT Corretor Imobiliário"
-                className="w-full h-full object-contain p-0.5"
+                alt="Logo Oficial TFT Corretor Imobiliário"
+                className="h-13 sm:h-15 md:h-16 w-auto object-contain filter drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)] drop-shadow-[0_0_12px_rgba(200,162,81,0.35)] drop-shadow-[0_1px_3px_rgba(255,255,255,0.4)]"
                 onError={(e) => {
                   const target = e.currentTarget;
-                  target.src = 'https://i.postimg.cc/mg44xzyy/Whats-App-Image-2026-10-20-at-18-22-09.jpg';
+                  if (target.src !== LOCAL_LOGO_URL) {
+                    target.src = LOCAL_LOGO_URL;
+                  }
                 }}
               />
             </div>
-            <div className="flex flex-col justify-center">
+            <div className="hidden sm:flex flex-col justify-center">
               <span className="text-xl sm:text-2xl font-bold tracking-tight text-white leading-none font-editorial group-hover:text-[#E2C481] transition-colors">
                 TFT <span className="text-[#C8A251] font-normal text-xs sm:text-sm font-sans tracking-widest uppercase ml-1">Corretor</span>
               </span>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { MessageCircle, Mail, Phone, Instagram, MapPin, ArrowRight, ShieldCheck } from 'lucide-react';
-import { OFFICIAL_LOGO_URL, BROKER_EMAIL, DISPLAY_PHONE, INSTAGRAM_URL, getWhatsAppUrl } from '../utils/whatsapp';
+import { OFFICIAL_LOGO_URL, LOCAL_LOGO_URL, BROKER_EMAIL, DISPLAY_PHONE, INSTAGRAM_URL, getWhatsAppUrl } from '../utils/whatsapp';
 
 interface FooterProps {
   onNavigate: (path: string) => void;
@@ -45,14 +45,16 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
           {/* Col 1 & 2: Brand Information */}
           <div className="lg:col-span-2 space-y-4">
             <div className="flex items-center gap-3">
-              <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-[#C8A251] bg-black shrink-0 shadow-lg flex items-center justify-center">
+              <div className="h-16 w-auto shrink-0 flex items-center justify-center">
                 <img
                   src={OFFICIAL_LOGO_URL}
                   alt="TFT Corretor Imobiliário"
-                  className="w-full h-full object-contain p-0.5"
+                  className="h-14 sm:h-16 w-auto object-contain filter drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)] drop-shadow-[0_0_10px_rgba(200,162,81,0.3)]"
                   onError={(e) => {
                     const target = e.currentTarget;
-                    target.src = 'https://i.postimg.cc/mg44xzyy/Whats-App-Image-2026-10-20-at-18-22-09.jpg';
+                    if (target.src !== LOCAL_LOGO_URL) {
+                      target.src = LOCAL_LOGO_URL;
+                    }
                   }}
                 />
               </div>

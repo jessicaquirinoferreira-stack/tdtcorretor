@@ -26,6 +26,7 @@ import {
 import { Property } from '../types';
 import { PropertyCard } from '../components/PropertyCard';
 import { getWhatsAppUrl, DISPLAY_PHONE } from '../utils/whatsapp';
+import { WatermarkBadge } from '../components/WatermarkBadge';
 
 interface HomePageProps {
   properties: Property[];
@@ -167,6 +168,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                   idx === currentSlide ? 'scale-105' : 'scale-100'
                 }`}
               />
+              <WatermarkBadge position="bottom-right" size="lg" opacity="opacity-90" className="hidden lg:block bottom-10 right-10 z-20" />
             </div>
           ))}
 
@@ -275,6 +277,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                  <WatermarkBadge position="bottom-right" size="sm" opacity="opacity-90" />
                   <div className="absolute bottom-3 left-3 right-3 text-white">
                     <p className="text-xs text-[#C8A251] font-semibold">{activeSlideData.location}</p>
                     <h4 className="text-base font-bold font-editorial line-clamp-1">{activeSlideData.propertyTitle}</h4>

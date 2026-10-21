@@ -37,6 +37,7 @@ import {
   getSiteConfig,
   updateSiteConfig
 } from '../lib/storage';
+import { PhotoUploader } from '../components/PhotoUploader';
 
 interface AdminPageProps {
   properties: Property[];
@@ -83,6 +84,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
     garages: '1',
     description: '',
     featuresStr: '',
+    images: [] as string[],
     imagesStr: '',
     coverImage: '',
     isFeatured: true,
@@ -125,6 +127,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
   };
 
   const handleStartCreateProperty = () => {
+    const defaultImg = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1400&q=80';
     setEditingPropertyId(null);
     setPropForm({
       title: '',
@@ -140,14 +143,16 @@ export const AdminPage: React.FC<AdminPageProps> = ({
       garages: '1',
       description: '',
       featuresStr: 'Excelente localização\nAcabamento moderno\nGaragem privativa',
-      imagesStr: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1400&q=80',
-      coverImage: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1400&q=80',
+      images: [defaultImg],
+      imagesStr: defaultImg,
+      coverImage: defaultImg,
       isFeatured: false,
     });
     setIsCreatingProp(true);
   };
 
   const handleStartEditProperty = (p: Property) => {
+    const pImages = p.images && p.images.length > 0 ? p.images : (p.coverImage ? [p.coverImage] : []);
     setEditingPropertyId(p.id);
     setPropForm({
       title: p.title,
@@ -163,8 +168,9 @@ export const AdminPage: React.FC<AdminPageProps> = ({
       garages: String(p.garages ?? ''),
       description: p.description,
       featuresStr: p.features.join('\n'),
-      imagesStr: p.images.join('\n'),
-      coverImage: p.coverImage,
+      images: pImages,
+      imagesStr: pImages.join('\n'),
+      coverImage: p.coverImage || pImages[0] || '',
       isFeatured: !!p.isFeatured,
     });
     setIsCreatingProp(true);
@@ -172,10 +178,12 @@ export const AdminPage: React.FC<AdminPageProps> = ({
 
   const handleSaveProperty = (e: React.FormEvent) => {
     e.preventDefault();
-    const imgs = propForm.imagesStr
-      .split('\n')
-      .map((s) => s.trim())
-      .filter(Boolean);
+    const imgs = propForm.images && propForm.images.length > 0
+      ? propForm.images
+      : propForm.imagesStr
+          .split('\n')
+          .map((s) => s.trim())
+          .filter(Boolean);
     const feats = propForm.featuresStr
       .split('\n')
       .map((s) => s.trim())
@@ -187,6 +195,8 @@ export const AdminPage: React.FC<AdminPageProps> = ({
       .replace(/[\u0300-\u036f]/g, '')
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)+/g, '');
+
+    const finalCover = propForm.coverImage || imgs[0] || '';
 
     const propData = {
       slug: slug || `imovel-${Date.now()}`,
@@ -205,8 +215,8 @@ export const AdminPage: React.FC<AdminPageProps> = ({
       garages: propForm.garages ? (isNaN(Number(propForm.garages)) ? propForm.garages : Number(propForm.garages)) : undefined,
       description: propForm.description,
       features: feats,
-      images: imgs.length > 0 ? imgs : [propForm.coverImage],
-      coverImage: propForm.coverImage || imgs[0] || '',
+      images: imgs.length > 0 ? imgs : (finalCover ? [finalCover] : []),
+      coverImage: finalCover,
       isFeatured: propForm.isFeatured,
       status: 'published' as const,
     };
@@ -619,27 +629,24 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
-                  Foto de Capa (URL)
-                </label>
-                <input
-                  type="url"
-                  value={propForm.coverImage}
-                  onChange={(e) => setPropForm({ ...propForm, coverImage: e.target.value })}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-[#0B2B20]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
-                  Todas as Fotos da Galeria (uma URL por linha)
-                </label>
-                <textarea
-                  rows={4}
-                  value={propForm.imagesStr}
-                  onChange={(e) => setPropForm({ ...propForm, imagesStr: e.target.value })}
-                  className="w-full px-3 py-2 text-xs font-mono border border-gray-300 rounded-md focus:ring-2 focus:ring-[#0B2B20]"
+              {/* Gestão Completa de Fotos: Upload do Dispositivo, Vercel Blob e Marca d'Água Oficial */}
+              <div className="pt-2">
+                <PhotoUploader
+                  images={propForm.images}
+                  coverImage={propForm.coverImage}
+                  onChangeImages={(newImgs) =>
+                    setPropForm((prev) => ({
+                      ...prev,
+                      images: newImgs,
+                      imagesStr: newImgs.join('\n'),
+                    }))
+                  }
+                  onChangeCoverImage={(newCover) =>
+                    setPropForm((prev) => ({
+                      ...prev,
+                      coverImage: newCover,
+                    }))
+                  }
                 />
               </div>
 
@@ -1012,6 +1019,49 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                 onChange={(e) => setSiteConfigState({ ...siteConfig, instagramUrl: e.target.value })}
                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md"
               />
+            </div>
+
+            <div className="p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider">
+                    Vercel Blob Storage Token
+                  </h4>
+                  <p className="text-[11px] text-gray-500">
+                    Insira seu <strong>BLOB_READ_WRITE_TOKEN</strong> para persistir uploads de fotos de imóveis diretamente na nuvem da Vercel.
+                  </p>
+                </div>
+                {siteConfig.vercelBlobToken && (
+                  <span className="px-2 py-0.5 text-[10px] font-bold bg-emerald-100 text-emerald-800 rounded">
+                    Token Salvo
+                  </span>
+                )}
+              </div>
+              <input
+                type="password"
+                value={siteConfig.vercelBlobToken || ''}
+                onChange={(e) => setSiteConfigState({ ...siteConfig, vercelBlobToken: e.target.value })}
+                placeholder="vercel_blob_rw_..."
+                className="w-full px-3 py-2 text-xs font-mono border border-gray-300 rounded-md focus:ring-2 focus:ring-[#0B2B20]"
+              />
+            </div>
+
+            <div className="p-4 bg-emerald-50/50 rounded-xl border border-emerald-100 flex items-center gap-4">
+              <div className="h-16 w-auto shrink-0 flex items-center justify-center p-2 bg-[#0B2B20] rounded-lg">
+                <img
+                  src="https://i.postimg.cc/DzTYyHj7/Logo-TFT-Corretor-Imobiliario-em-Verde.png"
+                  alt="Logo Oficial TFT"
+                  className="h-12 w-auto object-contain filter drop-shadow-[0_1px_3px_rgba(255,255,255,0.4)]"
+                />
+              </div>
+              <div className="space-y-0.5">
+                <span className="text-xs font-bold text-[#0B2B20] block">
+                  Logotipo Oficial e Marca d'Água Ativa
+                </span>
+                <p className="text-[11px] text-gray-600">
+                  Logo oficial com fundo transparente configurada como identidade visual do site e aplicada nas fotos dos empreendimentos.
+                </p>
+              </div>
             </div>
 
             <div className="pt-2">

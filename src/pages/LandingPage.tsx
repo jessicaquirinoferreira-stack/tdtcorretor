@@ -17,6 +17,7 @@ import {
 import { Property, LandingPageData } from '../types';
 import { getWhatsAppUrl, DISPLAY_PHONE } from '../utils/whatsapp';
 import { saveLead } from '../lib/storage';
+import { WatermarkBadge } from '../components/WatermarkBadge';
 
 interface LandingPageProps {
   landing: LandingPageData;
@@ -263,7 +264,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           {images.map((img, idx) => (
             <div
               key={idx}
-              className="aspect-[4/3] rounded-xl overflow-hidden bg-gray-100 shadow-sm border border-gray-200"
+              className="relative aspect-[4/3] rounded-xl overflow-hidden bg-gray-100 shadow-sm border border-gray-200"
             >
               <img
                 src={img}
@@ -271,6 +272,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 referrerPolicy="no-referrer"
                 className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
               />
+              <WatermarkBadge position="bottom-right" size="sm" opacity="opacity-85" />
             </div>
           ))}
         </div>

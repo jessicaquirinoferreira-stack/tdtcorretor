@@ -16,19 +16,23 @@ export const AboutPage: React.FC = () => {
               className="w-full aspect-[4/3] object-cover"
             />
             <div className="p-6 bg-[#0B2B20] text-white space-y-2">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full overflow-hidden border border-[#C8A251] bg-black shrink-0">
+              <div className="flex items-center gap-3.5">
+                <div className="h-14 w-auto shrink-0 flex items-center justify-center">
                   <img
                     src={OFFICIAL_LOGO_URL}
-                    alt="Logo TFT"
-                    className="w-full h-full object-cover"
+                    alt="Logo Oficial TFT"
+                    className="h-12 w-auto object-contain filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]"
+                    onError={(e) => {
+                      const target = e.currentTarget;
+                      target.src = '/assets/logo-tft-verde.png';
+                    }}
                   />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold font-editorial">
+                  <h3 className="text-lg font-bold font-editorial text-white">
                     Thiago Teixeira
                   </h3>
-                  <p className="text-xs text-[#C8A251] uppercase tracking-wider">
+                  <p className="text-xs text-[#C8A251] uppercase tracking-wider font-semibold">
                     TFT Corretor Imobiliário
                   </p>
                 </div>
