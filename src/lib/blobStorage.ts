@@ -9,10 +9,13 @@ export interface UploadResult {
   watermarked: boolean;
 }
 
+export const DEFAULT_VERCEL_BLOB_TOKEN =
+  'vercel_blob_rw_BuI5Eog1UypRBK4m_KBJMAtlKIGFaParKiTsImKbvd91c7Z';
+
 const BLOB_TOKEN_KEY = 'tft_vercel_blob_token';
 
 /**
- * Retrieves the active Vercel Blob Token from localStorage, siteConfig, or env
+ * Retrieves the active Vercel Blob Token from localStorage, siteConfig, env, or default
  */
 export function getActiveBlobToken(): string {
   try {
@@ -29,8 +32,15 @@ export function getActiveBlobToken(): string {
   }
 
   // Check Vite env variables
-  const envToken = (import.meta as any).env?.VITE_BLOB_READ_WRITE_TOKEN || (import.meta as any).env?.BLOB_READ_WRITE_TOKEN;
-  return envToken ? String(envToken).trim() : '';
+  const envToken =
+    (import.meta as any).env?.VITE_BLOB_READ_WRITE_TOKEN ||
+    (import.meta as any).env?.BLOB_READ_WRITE_TOKEN;
+  if (envToken && String(envToken).trim().length > 10) {
+    return String(envToken).trim();
+  }
+
+  // Pre-configured official Vercel Blob Token provided by user
+  return DEFAULT_VERCEL_BLOB_TOKEN;
 }
 
 /**

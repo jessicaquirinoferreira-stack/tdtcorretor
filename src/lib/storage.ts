@@ -32,6 +32,7 @@ const DEFAULT_CONFIG: SiteConfig = {
   whatsappNumber: DEFAULT_WHATSAPP_NUMBER,
   instagramUrl: INSTAGRAM_URL,
   cityState: 'Minas Gerais',
+  vercelBlobToken: 'vercel_blob_rw_BuI5Eog1UypRBK4m_KBJMAtlKIGFaParKiTsImKbvd91c7Z',
 };
 
 // Price formatting utility
@@ -133,19 +134,27 @@ export function getPropertyBySlug(slug: string): Property | undefined {
 
 // Ensure property document never exceeds Firestore's 1MB limit (1,048,576 bytes)
 export function preparePropertyForFirestore(prop: Property): Property {
-  const serialized = JSON.stringify(prop);
-  if (serialized.length > 850000 && prop.images && prop.images.length > 4) {
+  let safeProp = { ...prop };
+  let serialized = JSON.stringify(safeProp);
+
+  // If size exceeds 750KB (e.g. contains large local base64 fallback photos), trim extra photos safely
+  if (serialized.length > 750000 && safeProp.images && safeProp.images.length > 1) {
     console.warn(
-      `[Firestore Payload] Property ${prop.id} payload is ${serialized.length} bytes. Trimming extra images to ensure it stays strictly under Firestore's 1MB limit.`
+      `[Firestore Payload] Property ${prop.id} payload is ${serialized.length} bytes. Compacting to guarantee safe Firestore sync under 1MB.`
     );
-    const safeImages = prop.images.slice(0, 8);
-    return {
-      ...prop,
-      images: safeImages,
-      coverImage: prop.coverImage || safeImages[0] || '',
-    };
+    const cover = safeProp.coverImage || safeProp.images[0] || '';
+    let imgs = [...safeProp.images];
+
+    while (JSON.stringify(safeProp).length > 750000 && imgs.length > 1) {
+      imgs.pop();
+      safeProp = {
+        ...safeProp,
+        images: imgs,
+        coverImage: cover,
+      };
+    }
   }
-  return prop;
+  return safeProp;
 }
 
 let firestoreQuotaExhausted = false;

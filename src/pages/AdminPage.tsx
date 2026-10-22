@@ -18,7 +18,8 @@ import {
   Upload,
   KeyRound,
   ShieldAlert,
-  Save
+  Save,
+  Loader2
 } from 'lucide-react';
 import { Property, Lead, LandingPageData, PropertyType, PropertyPurpose } from '../types';
 import {
@@ -90,6 +91,10 @@ export const AdminPage: React.FC<AdminPageProps> = ({
     isFeatured: true,
   });
   const [isCreatingProp, setIsCreatingProp] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingPhotos, setIsUploadingPhotos] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
 
   // Site config state
   const [siteConfig, setSiteConfigState] = useState(getSiteConfig());
@@ -129,6 +134,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
   const handleStartCreateProperty = () => {
     const defaultImg = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1400&q=80';
     setEditingPropertyId(null);
+    setSaveError(null);
     setPropForm({
       title: '',
       type: 'Casa',
@@ -154,6 +160,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
   const handleStartEditProperty = (p: Property) => {
     const pImages = p.images && p.images.length > 0 ? p.images : (p.coverImage ? [p.coverImage] : []);
     setEditingPropertyId(p.id);
+    setSaveError(null);
     setPropForm({
       title: p.title,
       type: p.type,
@@ -178,64 +185,96 @@ export const AdminPage: React.FC<AdminPageProps> = ({
 
   const handleSaveProperty = async (e: React.FormEvent) => {
     e.preventDefault();
-    const imgs = propForm.images && propForm.images.length > 0
-      ? propForm.images
-      : propForm.imagesStr
-          .split('\n')
-          .map((s) => s.trim())
-          .filter(Boolean);
-    const feats = propForm.featuresStr
-      .split('\n')
-      .map((s) => s.trim())
-      .filter(Boolean);
+    setSaveError(null);
 
-    const slug = propForm.title
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)+/g, '');
-
-    const finalCover = propForm.coverImage || imgs[0] || '';
-
-    // If user enters a price (e.g. R$ 450.000), show that price.
-    // If left blank or left as "A consultar" / "Valor a consultar", show "A consultar".
-    const rawPrice = propForm.price ? propForm.price.trim() : '';
-    const isConsult = !rawPrice || rawPrice.toLowerCase().includes('consultar');
-    const finalPrice = isConsult ? 'A consultar' : rawPrice;
-
-    const propData = {
-      slug: slug || `imovel-${Date.now()}`,
-      title: propForm.title,
-      type: propForm.type,
-      purpose: propForm.purpose,
-      price: finalPrice,
-      location: {
-        city: propForm.city,
-        state: propForm.state,
-        neighborhood: propForm.neighborhood,
-      },
-      area: propForm.area,
-      bedrooms: propForm.bedrooms ? (isNaN(Number(propForm.bedrooms)) ? propForm.bedrooms : Number(propForm.bedrooms)) : undefined,
-      bathrooms: propForm.bathrooms ? (isNaN(Number(propForm.bathrooms)) ? propForm.bathrooms : Number(propForm.bathrooms)) : undefined,
-      garages: propForm.garages ? (isNaN(Number(propForm.garages)) ? propForm.garages : Number(propForm.garages)) : undefined,
-      description: propForm.description,
-      features: feats,
-      images: imgs.length > 0 ? imgs : (finalCover ? [finalCover] : []),
-      coverImage: finalCover,
-      isFeatured: propForm.isFeatured,
-      status: 'published' as const,
-    };
-
-    if (editingPropertyId) {
-      await updateProperty(editingPropertyId, propData);
-    } else {
-      await addProperty(propData);
+    if (!propForm.title || !propForm.title.trim()) {
+      setSaveError('Por favor, informe o título ou nome do imóvel.');
+      return;
     }
 
-    onRefreshData();
-    setIsCreatingProp(false);
-    setEditingPropertyId(null);
+    if (isUploadingPhotos) {
+      setSaveError('Aguarde o envio das fotos para o Vercel Blob ser concluído antes de salvar.');
+      return;
+    }
+
+    setIsSaving(true);
+
+    try {
+      const imgs = propForm.images && propForm.images.length > 0
+        ? propForm.images
+        : propForm.imagesStr
+            .split('\n')
+            .map((s) => s.trim())
+            .filter(Boolean);
+      const feats = propForm.featuresStr
+        .split('\n')
+        .map((s) => s.trim())
+        .filter(Boolean);
+
+      const slug = propForm.title
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)+/g, '');
+
+      const fallbackCover = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1400&q=80';
+      const finalCover = propForm.coverImage || imgs[0] || fallbackCover;
+      const finalImages = imgs.length > 0 ? imgs : [finalCover];
+
+      // If user enters a price (e.g. R$ 450.000), show that price.
+      // If left blank or left as "A consultar" / "Valor a consultar", show "A consultar".
+      const rawPrice = propForm.price ? propForm.price.trim() : '';
+      const isConsult = !rawPrice || rawPrice.toLowerCase().includes('consultar');
+      const finalPrice = isConsult ? 'A consultar' : rawPrice;
+
+      const propData = {
+        slug: slug || `imovel-${Date.now()}`,
+        title: propForm.title.trim(),
+        type: propForm.type,
+        purpose: propForm.purpose,
+        price: finalPrice,
+        location: {
+          city: propForm.city.trim() || 'Coronel Fabriciano',
+          state: propForm.state.trim() || 'Minas Gerais',
+          neighborhood: propForm.neighborhood.trim(),
+        },
+        area: propForm.area.trim() || 'Sob consulta',
+        bedrooms: propForm.bedrooms ? (isNaN(Number(propForm.bedrooms)) ? propForm.bedrooms : Number(propForm.bedrooms)) : undefined,
+        bathrooms: propForm.bathrooms ? (isNaN(Number(propForm.bathrooms)) ? propForm.bathrooms : Number(propForm.bathrooms)) : undefined,
+        garages: propForm.garages ? (isNaN(Number(propForm.garages)) ? propForm.garages : Number(propForm.garages)) : undefined,
+        description: propForm.description.trim() || 'Excelente imóvel em localização privilegiada.',
+        features: feats.length > 0 ? feats : ['Excelente localização', 'Acabamento diferenciado'],
+        images: finalImages,
+        coverImage: finalCover,
+        isFeatured: propForm.isFeatured,
+        status: 'published' as const,
+      };
+
+      if (editingPropertyId) {
+        await updateProperty(editingPropertyId, propData);
+      } else {
+        await addProperty(propData);
+      }
+
+      onRefreshData();
+      setIsCreatingProp(false);
+      setEditingPropertyId(null);
+      setSaveSuccessMsg(
+        editingPropertyId
+          ? 'Imóvel atualizado com sucesso!'
+          : 'Imóvel publicado com sucesso e visível para todos os visitantes!'
+      );
+      setTimeout(() => setSaveSuccessMsg(null), 5000);
+    } catch (err: any) {
+      console.error('Falha ao salvar imóvel:', err);
+      setSaveError(
+        err?.message ||
+        'Ocorreu um erro ao salvar o imóvel. Os dados foram preservados localmente.'
+      );
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleDeleteProperty = async (id: string) => {
@@ -449,13 +488,26 @@ export const AdminPage: React.FC<AdminPageProps> = ({
             )}
           </div>
 
+          {/* Success Notification */}
+          {saveSuccessMsg && (
+            <div className="p-4 bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 rounded-xl flex items-center gap-2.5 shadow-sm animate-in fade-in">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span className="font-semibold">{saveSuccessMsg}</span>
+            </div>
+          )}
+
           {/* Form to create/edit property */}
           {isCreatingProp ? (
             <form onSubmit={handleSaveProperty} className="bg-white rounded-2xl border border-gray-200 p-6 sm:p-8 shadow-sm space-y-6">
               <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-                <h3 className="text-base font-bold text-[#0B2B20]">
-                  {editingPropertyId ? 'Editar Imóvel' : 'Cadastrar Novo Imóvel'}
-                </h3>
+                <div>
+                  <h3 className="text-base font-bold text-[#0B2B20]">
+                    {editingPropertyId ? 'Editar Imóvel' : 'Cadastrar Novo Imóvel'}
+                  </h3>
+                  <p className="text-[11px] text-gray-500">
+                    O imóvel será publicado no Cloud Firestore e fotos persistidas no Vercel Blob CDN.
+                  </p>
+                </div>
                 <button
                   type="button"
                   onClick={() => setIsCreatingProp(false)}
@@ -464,6 +516,13 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                   Cancelar
                 </button>
               </div>
+
+              {saveError && (
+                <div className="p-3 bg-red-50 border border-red-200 text-xs text-red-700 rounded-lg flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{saveError}</span>
+                </div>
+              )}
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="sm:col-span-2">
@@ -660,6 +719,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                 <PhotoUploader
                   images={propForm.images}
                   coverImage={propForm.coverImage}
+                  onUploadingChange={setIsUploadingPhotos}
                   onChangeImages={(newImgs) =>
                     setPropForm((prev) => ({
                       ...prev,
@@ -689,20 +749,62 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                 </label>
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
-                <button
-                  type="button"
-                  onClick={() => setIsCreatingProp(false)}
-                  className="px-4 py-2 text-xs font-semibold text-gray-600 hover:text-gray-900"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-6 py-2 text-xs uppercase tracking-wider font-semibold text-white bg-[#0B2B20] hover:bg-[#134636] rounded-md transition shadow"
-                >
-                  Salvar Imóvel
-                </button>
+              {saveError && (
+                <div className="p-3 bg-red-50 border border-red-200 text-xs text-red-700 rounded-lg flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{saveError}</span>
+                </div>
+              )}
+
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-gray-100">
+                <div className="text-[11px] text-gray-500">
+                  {isUploadingPhotos ? (
+                    <span className="text-amber-700 font-medium flex items-center gap-1.5">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      Enviando fotografias para o Vercel Blob CDN...
+                    </span>
+                  ) : isSaving ? (
+                    <span className="text-blue-700 font-medium flex items-center gap-1.5">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      Salvando dados no Cloud Firestore e sincronizando...
+                    </span>
+                  ) : (
+                    <span>Pronto para publicação. Clique em Salvar Imóvel.</span>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+                  <button
+                    type="button"
+                    disabled={isSaving}
+                    onClick={() => setIsCreatingProp(false)}
+                    className="px-4 py-2 text-xs font-semibold text-gray-600 hover:text-gray-900 disabled:opacity-50"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSaving || isUploadingPhotos}
+                    className="flex items-center justify-center gap-2 px-6 py-2.5 text-xs uppercase tracking-wider font-semibold text-white bg-[#0B2B20] hover:bg-[#134636] disabled:bg-gray-400 disabled:cursor-not-allowed rounded-md transition shadow"
+                  >
+                    {isSaving ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Salvando Imóvel...</span>
+                      </>
+                    ) : isUploadingPhotos ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Aguarde Upload...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4" />
+                        <span>Salvar Imóvel</span>
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             </form>
           ) : (

@@ -24,6 +24,7 @@ interface PhotoUploaderProps {
   coverImage: string;
   onChangeImages: (images: string[]) => void;
   onChangeCoverImage: (cover: string) => void;
+  onUploadingChange?: (isUploading: boolean) => void;
 }
 
 export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
@@ -31,6 +32,7 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
   coverImage,
   onChangeImages,
   onChangeCoverImage,
+  onUploadingChange,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -51,13 +53,14 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
   const handleFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
     setIsUploading(true);
+    onUploadingChange?.(true);
 
     const newUploadedUrls: string[] = [];
     const total = files.length;
 
     for (let i = 0; i < total; i++) {
       const file = files[i];
-      setUploadProgress(`Processando ${i + 1} de ${total}: "${file.name}"...`);
+      setUploadProgress(`Processando [${i + 1}/${total}]: "${file.name}"...`);
 
       try {
         const res = await uploadPropertyPhoto(file, {
@@ -84,6 +87,7 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
     }
 
     setIsUploading(false);
+    onUploadingChange?.(false);
     setUploadProgress('');
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
