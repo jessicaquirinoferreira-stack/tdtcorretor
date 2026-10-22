@@ -293,7 +293,7 @@ export const PropertyDetailPage: React.FC<PropertyDetailPageProps> = ({
                 Valor Previsto
               </span>
               <div className="text-2xl font-bold text-[#0B2B20] font-editorial mt-1">
-                {property.price || 'Valor a consultar'}
+                {!property.price || property.price.toLowerCase().includes('consultar') ? 'A consultar' : property.price}
               </div>
               <p className="text-xs text-gray-500 mt-1">
                 Condições de negociação, formas de pagamento e permuta sob consulta direta.

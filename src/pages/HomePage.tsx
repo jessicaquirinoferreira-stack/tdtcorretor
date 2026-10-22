@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Search,
   MessageCircle,
@@ -56,66 +56,76 @@ export const HomePage: React.FC<HomePageProps> = ({
   const [city, setCity] = useState<string>('Todas');
   const [minBedrooms, setMinBedrooms] = useState<string>('Todos');
 
-  // Hero Slideshow state
-  const heroSlides: HeroSlide[] = [
-    {
-      id: 'slide-1',
-      image: 'https://i.postimg.cc/MTQ3KtWQ/Whats-App-Image-2026-10-20-at-18-24-11.jpg',
-      title: 'Casa Geminada Duplex de Alto Padrão',
-      propertyTitle: 'Casa Geminada Duplex — Giovani',
-      location: 'Coronel Fabriciano · Bairro Giovani',
-      badge: 'Destaque Residencial',
-      area: '3 Quartos (1 Suíte) · Garagem',
-      slug: 'casa-geminada-duplex-giovani',
-    },
-    {
-      id: 'slide-2',
-      image: 'https://i.postimg.cc/jjjGKzwv/Whats-App-Image-2026-10-20-at-18-16-56.jpg',
-      title: 'Sítio Exclusivo com 1.800 m²',
-      propertyTitle: 'Sítio de 1.800 m²',
-      location: 'Interior de Minas Gerais · Ampla Área Verde',
-      badge: 'Refúgio & Tranquilidade',
-      area: '1.800 m² de terreno',
-      slug: 'sitio-1800m2',
-    },
-    {
-      id: 'slide-3',
-      image: 'https://i.postimg.cc/856XPw1z/Whats-App-Image-2026-10-20-at-18-24-11-(1).jpg',
-      title: 'Ambientes Amplos e Iluminação Natural',
-      propertyTitle: 'Casa Geminada Duplex — Giovani',
-      location: 'Coronel Fabriciano · MG',
-      badge: 'Estrutura Contemporânea',
-      area: 'Acabamento Primoroso',
-      slug: 'casa-geminada-duplex-giovani',
-    },
-    {
-      id: 'slide-4',
-      image: 'https://i.postimg.cc/0NNLxpML/Whats-App-Image-2026-10-20-at-18-16-57.jpg',
-      title: 'Topografia e Espaço para Lazer e Descanso',
-      propertyTitle: 'Sítio de 1.800 m²',
-      location: 'Região Nobre de Minas Gerais',
-      badge: 'Espaço e Natureza',
-      area: 'Potencial Familiar ou Renda',
-      slug: 'sitio-1800m2',
-    },
-    {
-      id: 'slide-5',
-      image: 'https://i.postimg.cc/vmjSsCd8/Whats-App-Image-2026-10-20-at-18-24-12.jpg',
-      title: 'Setorização Inteligente e Conforto Total',
-      propertyTitle: 'Casa Geminada Duplex — Giovani',
-      location: 'Vale do Aço · MG',
-      badge: 'Pronto para Visita',
-      area: 'Duplex Exclusivo',
-      slug: 'casa-geminada-duplex-giovani',
-    },
-  ];
+  // Dynamic Hero Slideshow dynamically generated from uploaded enterprises and properties
+  const heroSlides: HeroSlide[] = useMemo(() => {
+    const list: HeroSlide[] = [];
+
+    // Sort: featured first, then newest
+    const sorted = [...properties].sort((a, b) => {
+      if (a.isFeatured && !b.isFeatured) return -1;
+      if (!a.isFeatured && b.isFeatured) return 1;
+      const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return timeB - timeA;
+    });
+
+    for (const p of sorted) {
+      const pImages = p.images && p.images.length > 0 ? p.images : (p.coverImage ? [p.coverImage] : []);
+      if (pImages[0]) {
+        list.push({
+          id: `slide-${p.id}`,
+          image: pImages[0],
+          title: p.title,
+          propertyTitle: p.title,
+          location: `${p.location.city}${p.location.neighborhood ? ` · ${p.location.neighborhood}` : ''}`,
+          badge: p.isFeatured ? 'Destaque Oficial' : (p.isConceptual ? 'Estudo Conceitual' : 'Oportunidade'),
+          area: p.area || `${p.bedrooms ? `${p.bedrooms} Quartos` : 'Consulte'}`,
+          slug: p.slug,
+        });
+      }
+      if (list.length >= 8) break;
+    }
+
+    if (list.length > 0) return list;
+
+    // Default fallback if catalog is initially loading
+    return [
+      {
+        id: 'slide-1',
+        image: 'https://i.postimg.cc/MTQ3KtWQ/Whats-App-Image-2026-10-20-at-18-24-11.jpg',
+        title: 'Casa Geminada Duplex de Alto Padrão',
+        propertyTitle: 'Casa Geminada Duplex — Giovani',
+        location: 'Coronel Fabriciano · Bairro Giovani',
+        badge: 'Destaque Residencial',
+        area: '3 Quartos (1 Suíte) · Garagem',
+        slug: 'casa-geminada-duplex-giovani',
+      },
+      {
+        id: 'slide-2',
+        image: 'https://i.postimg.cc/jjjGKzwv/Whats-App-Image-2026-10-20-at-18-16-56.jpg',
+        title: 'Sítio Exclusivo com 1.800 m²',
+        propertyTitle: 'Sítio de 1.800 m²',
+        location: 'Interior de Minas Gerais · Ampla Área Verde',
+        badge: 'Refúgio & Tranquilidade',
+        area: '1.800 m² de terreno',
+        slug: 'sitio-1800m2',
+      },
+    ];
+  }, [properties]);
 
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
 
+  // Reset current slide if list shrinks
+  useEffect(() => {
+    if (currentSlide >= heroSlides.length) {
+      setCurrentSlide(0);
+    }
+  }, [heroSlides.length, currentSlide]);
+
   // Auto-play slideshow every 5.5 seconds
   useEffect(() => {
-    if (!isPlaying) return;
+    if (!isPlaying || heroSlides.length <= 1) return;
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
     }, 5500);
@@ -134,7 +144,13 @@ export const HomePage: React.FC<HomePageProps> = ({
     onNavigate(`/imoveis/${slug}`);
   };
 
-  const featuredProperties = properties.filter((p) => p.isFeatured).slice(0, 4);
+  // Show featured properties first, or newest if none are explicitly featured
+  const featuredProperties = useMemo(() => {
+    const feat = properties.filter((p) => p.isFeatured);
+    if (feat.length >= 3) return feat.slice(0, 6);
+    const nonFeat = properties.filter((p) => !p.isFeatured);
+    return [...feat, ...nonFeat].slice(0, 6);
+  }, [properties]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();

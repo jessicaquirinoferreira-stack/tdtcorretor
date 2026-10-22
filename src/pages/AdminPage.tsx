@@ -133,7 +133,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
       title: '',
       type: 'Casa',
       purpose: 'Venda',
-      price: 'Valor a consultar',
+      price: 'A consultar',
       city: 'Coronel Fabriciano',
       state: 'Minas Gerais',
       neighborhood: '',
@@ -146,7 +146,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
       images: [defaultImg],
       imagesStr: defaultImg,
       coverImage: defaultImg,
-      isFeatured: false,
+      isFeatured: true,
     });
     setIsCreatingProp(true);
   };
@@ -176,7 +176,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
     setIsCreatingProp(true);
   };
 
-  const handleSaveProperty = (e: React.FormEvent) => {
+  const handleSaveProperty = async (e: React.FormEvent) => {
     e.preventDefault();
     const imgs = propForm.images && propForm.images.length > 0
       ? propForm.images
@@ -198,12 +198,18 @@ export const AdminPage: React.FC<AdminPageProps> = ({
 
     const finalCover = propForm.coverImage || imgs[0] || '';
 
+    // If user enters a price (e.g. R$ 450.000), show that price.
+    // If left blank or left as "A consultar" / "Valor a consultar", show "A consultar".
+    const rawPrice = propForm.price ? propForm.price.trim() : '';
+    const isConsult = !rawPrice || rawPrice.toLowerCase().includes('consultar');
+    const finalPrice = isConsult ? 'A consultar' : rawPrice;
+
     const propData = {
       slug: slug || `imovel-${Date.now()}`,
       title: propForm.title,
       type: propForm.type,
       purpose: propForm.purpose,
-      price: propForm.price || 'Valor a consultar',
+      price: finalPrice,
       location: {
         city: propForm.city,
         state: propForm.state,
@@ -222,9 +228,9 @@ export const AdminPage: React.FC<AdminPageProps> = ({
     };
 
     if (editingPropertyId) {
-      updateProperty(editingPropertyId, propData);
+      await updateProperty(editingPropertyId, propData);
     } else {
-      addProperty(propData);
+      await addProperty(propData);
     }
 
     onRefreshData();
@@ -232,15 +238,15 @@ export const AdminPage: React.FC<AdminPageProps> = ({
     setEditingPropertyId(null);
   };
 
-  const handleDeleteProperty = (id: string) => {
+  const handleDeleteProperty = async (id: string) => {
     if (confirm('Tem certeza de que deseja excluir este imóvel?')) {
-      deleteProperty(id);
+      await deleteProperty(id);
       onRefreshData();
     }
   };
 
-  const handleCreateLanding = (propId: string) => {
-    const landing = createLandingPage(propId);
+  const handleCreateLanding = async (propId: string) => {
+    const landing = await createLandingPage(propId);
     if (landing) {
       alert(`Landing page criada com sucesso! URL: /landing/${landing.slug}`);
       onRefreshData();
@@ -248,9 +254,9 @@ export const AdminPage: React.FC<AdminPageProps> = ({
     }
   };
 
-  const handleSaveConfig = (e: React.FormEvent) => {
+  const handleSaveConfig = async (e: React.FormEvent) => {
     e.preventDefault();
-    updateSiteConfig(siteConfig);
+    await updateSiteConfig(siteConfig);
     setConfigSaved(true);
     setTimeout(() => setConfigSaved(false), 2500);
   };
@@ -510,16 +516,36 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
-                    Preço Exibido
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Preço
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setPropForm({ ...propForm, price: 'A consultar' })}
+                      className={`text-[10px] px-2 py-0.5 rounded font-medium transition ${
+                        !propForm.price || propForm.price.toLowerCase().includes('consultar')
+                          ? 'bg-[#0B2B20] text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      A consultar
+                    </button>
+                  </div>
                   <input
                     type="text"
                     value={propForm.price}
                     onChange={(e) => setPropForm({ ...propForm, price: e.target.value })}
-                    placeholder="Valor a consultar"
+                    placeholder="Ex: R$ 450.000 ou A consultar"
                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-[#0B2B20]"
                   />
+                  <span className="block text-[10px] mt-1 text-gray-500">
+                    {!propForm.price || propForm.price.toLowerCase().includes('consultar') ? (
+                      <span className="text-amber-700 font-medium">Exibição: <strong>A consultar</strong></span>
+                    ) : (
+                      <span className="text-emerald-700 font-medium">Exibição: <strong>{propForm.price}</strong></span>
+                    )}
+                  </span>
                 </div>
 
                 <div>
@@ -734,7 +760,15 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                         </td>
 
                         <td className="px-4 py-3 font-semibold text-gray-900">
-                          {p.price}
+                          {!p.price || p.price.toLowerCase().includes('consultar') ? (
+                            <span className="text-amber-800 bg-amber-50 px-2 py-0.5 rounded text-[11px] font-medium border border-amber-200">
+                              A consultar
+                            </span>
+                          ) : (
+                            <span className="text-[#0B2B20] font-bold">
+                              {p.price}
+                            </span>
+                          )}
                         </td>
 
                         <td className="px-4 py-3 text-right space-x-1 whitespace-nowrap">

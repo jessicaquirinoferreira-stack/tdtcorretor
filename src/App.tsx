@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Property, Lead, LandingPageData } from './types';
-import { getProperties, getLeads, getLandingPages, getPropertyBySlug, seedFirestoreIfEmpty } from './lib/storage';
+import {
+  getProperties,
+  getLeads,
+  getLandingPages,
+  getPropertyBySlug,
+  subscribeToProperties,
+  subscribeToLeads,
+} from './lib/storage';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { WhatsAppButton } from './components/WhatsAppButton';
@@ -30,11 +37,20 @@ export default function App() {
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [filterParams, setFilterParams] = useState<Record<string, string>>({});
 
-  // Seed Firestore on startup
+  // Real-time synchronization with Cloud Firestore for all visitors and admin
   useEffect(() => {
-    seedFirestoreIfEmpty().catch((err) => {
-      console.log('Firebase ready with local storage sync:', err);
+    const unsubProperties = subscribeToProperties((cloudProps) => {
+      setProperties(cloudProps);
     });
+
+    const unsubLeads = subscribeToLeads((cloudLeads) => {
+      setLeads(cloudLeads);
+    });
+
+    return () => {
+      unsubProperties();
+      unsubLeads();
+    };
   }, []);
 
   // Sync with browser history

@@ -52,7 +52,7 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({ property, onSelect }
           <div>
             <span className="text-xs uppercase tracking-wider text-gray-300 block">Preço</span>
             <span className="text-lg font-bold font-editorial tracking-wide">
-              {property.price || 'Valor a consultar'}
+              {!property.price || property.price.toLowerCase().includes('consultar') ? 'A consultar' : property.price}
             </span>
           </div>
 
