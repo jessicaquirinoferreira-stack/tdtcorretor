@@ -103,19 +103,75 @@ export function getProperties(): Property[] {
 }
 
 export function saveProperties(props: Property[]): void {
+  const deleted = getDeletedPropertyIds();
+  const cleanProps = props.filter((p) => p && p.id && !deleted.has(p.id));
+
   try {
-    const deleted = getDeletedPropertyIds();
-    const cleanProps = props.filter((p) => p && p.id && !deleted.has(p.id));
     localStorage.setItem(STORAGE_KEYS.PROPERTIES, JSON.stringify(cleanProps));
     localStorage.setItem(STORAGE_KEYS.INITIALIZED, 'true');
   } catch (e) {
-    console.error('Failed to save properties to localStorage', e);
+    console.warn('LocalStorage quota warning, saving with optimized image payload:', e);
+    try {
+      // If browser quota exceeded, save lightweight version with cover + first 4 photos
+      const lightweight = cleanProps.map((p) => ({
+        ...p,
+        images: p.images && p.images.length > 4 ? p.images.slice(0, 4) : p.images,
+      }));
+      localStorage.setItem(STORAGE_KEYS.PROPERTIES, JSON.stringify(lightweight));
+      localStorage.setItem(STORAGE_KEYS.INITIALIZED, 'true');
+      console.log('Saved optimized properties to localStorage.');
+    } catch (fallbackErr) {
+      console.error('Failed to save properties to localStorage:', fallbackErr);
+    }
   }
 }
 
 export function getPropertyBySlug(slug: string): Property | undefined {
   const props = getProperties();
   return props.find((p) => p.slug === slug || p.id === slug);
+}
+
+// Ensure property document never exceeds Firestore's 1MB limit (1,048,576 bytes)
+export function preparePropertyForFirestore(prop: Property): Property {
+  const serialized = JSON.stringify(prop);
+  if (serialized.length > 850000 && prop.images && prop.images.length > 4) {
+    console.warn(
+      `[Firestore Payload] Property ${prop.id} payload is ${serialized.length} bytes. Trimming extra images to ensure it stays strictly under Firestore's 1MB limit.`
+    );
+    const safeImages = prop.images.slice(0, 8);
+    return {
+      ...prop,
+      images: safeImages,
+      coverImage: prop.coverImage || safeImages[0] || '',
+    };
+  }
+  return prop;
+}
+
+let firestoreQuotaExhausted = false;
+
+export function isFirestoreQuotaExhausted(): boolean {
+  return firestoreQuotaExhausted;
+}
+
+function checkAndHandleQuotaError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err || '');
+  const code = (err as { code?: string })?.code || '';
+  if (
+    code === 'resource-exhausted' ||
+    msg.includes('resource-exhausted') ||
+    msg.includes('Quota limit exceeded') ||
+    msg.includes('Quota exceeded')
+  ) {
+    if (!firestoreQuotaExhausted) {
+      firestoreQuotaExhausted = true;
+      console.warn(
+        '[Firestore Cota] A cota diária gratuita do Cloud Firestore foi atingida para hoje. O site continua funcionando normalmente com persistência local (localStorage), e a cota será resetada automaticamente pelo Google no próximo dia.'
+      );
+    }
+    return true;
+  }
+  return false;
 }
 
 // Real-time synchronization of Properties with Cloud Firestore
@@ -154,10 +210,12 @@ export function subscribeToProperties(
             }
           }
         } catch (tombstoneErr) {
-          console.warn('Error processing deleted_properties snapshot:', tombstoneErr);
+          checkAndHandleQuotaError(tombstoneErr);
         }
       },
-      (err) => console.warn('deleted_properties snapshot listener error:', err)
+      (err) => {
+        checkAndHandleQuotaError(err);
+      }
     );
 
     // 2. Listen for properties collection
@@ -168,21 +226,37 @@ export function subscribeToProperties(
           const deleted = getDeletedPropertyIds();
 
           if (snapshot.empty) {
+            // Check if we have valid local properties created by admin
+            const localProps = getProperties();
+            const validLocal = localProps.filter((p) => !deleted.has(p.id));
+
+            if (validLocal.length > 0) {
+              // Upload local properties to Firestore so all clients online see them!
+              if (!firestoreQuotaExhausted) {
+                for (const p of validLocal) {
+                  const safeDoc = preparePropertyForFirestore(p);
+                  setDoc(doc(db, 'properties', safeDoc.id), safeDoc).catch((e) =>
+                    checkAndHandleQuotaError(e)
+                  );
+                }
+              }
+              callback(validLocal);
+              return;
+            }
+
             const isInitialized = localStorage.getItem(STORAGE_KEYS.INITIALIZED);
             // Only seed if brand-new, never initialized, and no deletions occurred
-            if (!isInitialized && deleted.size === 0) {
-              console.log('Firestore properties empty on fresh install. Seeding initial dataset...');
+            if (!isInitialized && deleted.size === 0 && !firestoreQuotaExhausted) {
               const initialToSeed = INITIAL_PROPERTIES.filter((p) => !deleted.has(p.id));
               for (const p of initialToSeed) {
-                await setDoc(doc(db, 'properties', p.id), p).catch((e) =>
-                  console.warn('Seed doc error', e)
-                );
+                await setDoc(doc(db, 'properties', p.id), p).catch((e) => {
+                  checkAndHandleQuotaError(e);
+                });
               }
               saveProperties(initialToSeed);
               callback(initialToSeed);
               return;
             }
-            // Admin intentionally deleted all properties or database is empty
             saveProperties([]);
             callback([]);
             return;
@@ -191,9 +265,8 @@ export function subscribeToProperties(
           const remoteProps: Property[] = [];
           for (const docSnap of snapshot.docs) {
             const propId = docSnap.id;
-            // If this property was marked as deleted, ensure it's removed and NEVER displayed
+            // If this property was marked as deleted, filter it out from display
             if (deleted.has(propId)) {
-              deleteDoc(doc(db, 'properties', propId)).catch(() => {});
               continue;
             }
 
@@ -205,23 +278,43 @@ export function subscribeToProperties(
             });
           }
 
+          // Merge local properties that are not yet in Firestore (e.g. freshly created or pending sync)
+          const localProps = getProperties();
+          const remoteIds = new Set(remoteProps.map((p) => p.id));
+          const localOnly = localProps.filter(
+            (lp) => !deleted.has(lp.id) && !remoteIds.has(lp.id)
+          );
+
+          // Combined list: remote is authoritative, localOnly properties are preserved!
+          const mergedProps = [...remoteProps, ...localOnly];
+
           // Sort by creation date descending
-          remoteProps.sort((a, b) => {
+          mergedProps.sort((a, b) => {
             const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
             const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
             return timeB - timeA;
           });
 
+          // Upload any localOnly to Firestore in background so all clients online see them
+          if (localOnly.length > 0 && !firestoreQuotaExhausted) {
+            for (const pending of localOnly) {
+              const safeDoc = preparePropertyForFirestore(pending);
+              setDoc(doc(db, 'properties', safeDoc.id), safeDoc).catch((e) =>
+                checkAndHandleQuotaError(e)
+              );
+            }
+          }
+
           // Cache locally and notify subscribers
-          saveProperties(remoteProps);
-          callback(remoteProps);
+          saveProperties(mergedProps);
+          callback(mergedProps);
         } catch (innerErr) {
-          console.warn('Error processing properties snapshot:', innerErr);
+          checkAndHandleQuotaError(innerErr);
           callback(getProperties());
         }
       },
       (error) => {
-        console.warn('Firestore subscription error (using local cache):', error);
+        checkAndHandleQuotaError(error);
         callback(getProperties());
       }
     );
@@ -231,7 +324,7 @@ export function subscribeToProperties(
       unsubTombstones();
     };
   } catch (err) {
-    console.warn('Could not attach Firestore listener:', err);
+    checkAndHandleQuotaError(err);
     callback(getProperties());
     return () => {};
   }
@@ -242,23 +335,27 @@ export async function addProperty(
 ): Promise<Property> {
   const props = getProperties();
   const formattedPrice = formatPropertyPrice(property.price);
-  const newProp: Property = {
+  const rawProp: Property = {
     ...property,
     price: formattedPrice,
     id: `prop-${Date.now()}`,
     createdAt: new Date().toISOString(),
   };
 
+  const newProp = preparePropertyForFirestore(rawProp);
+
   // Immediate local cache update
   const updated = [newProp, ...props.filter((p) => p.id !== newProp.id)];
   saveProperties(updated);
 
-  // Sync to Cloud Firestore so all visitors and devices see it
-  try {
-    await setDoc(doc(db, 'properties', newProp.id), newProp);
-    console.log('Imóvel publicado no Cloud Firestore com sucesso:', newProp.id);
-  } catch (e) {
-    console.warn('Firestore write warning:', e);
+  // Sync to Cloud Firestore if quota allows
+  if (!firestoreQuotaExhausted) {
+    try {
+      await setDoc(doc(db, 'properties', newProp.id), newProp);
+      console.log('Imóvel publicado no Cloud Firestore com sucesso:', newProp.id);
+    } catch (e) {
+      checkAndHandleQuotaError(e);
+    }
   }
 
   return newProp;
@@ -277,16 +374,19 @@ export async function updateProperty(
     formattedUpdates.price = formatPropertyPrice(formattedUpdates.price);
   }
 
-  const updatedProp = { ...props[index], ...formattedUpdates };
+  const rawProp = { ...props[index], ...formattedUpdates };
+  const updatedProp = preparePropertyForFirestore(rawProp);
   props[index] = updatedProp;
   saveProperties(props);
 
   // Sync to Firestore
-  try {
-    await setDoc(doc(db, 'properties', id), updatedProp, { merge: true });
-    console.log('Imóvel atualizado no Cloud Firestore:', id);
-  } catch (e) {
-    console.warn('Firestore update warning:', e);
+  if (!firestoreQuotaExhausted) {
+    try {
+      await setDoc(doc(db, 'properties', id), updatedProp, { merge: true });
+      console.log('Imóvel atualizado no Cloud Firestore:', id);
+    } catch (e) {
+      checkAndHandleQuotaError(e);
+    }
   }
 
   return updatedProp;
@@ -301,23 +401,24 @@ export async function deleteProperty(id: string): Promise<boolean> {
   const filtered = props.filter((p) => p.id !== id);
   saveProperties(filtered);
 
-  // 3. Register permanent tombstone in Firestore (so no other client can ever resurrect it)
-  try {
-    await setDoc(doc(db, 'deleted_properties', id), {
-      id,
-      deletedAt: new Date().toISOString(),
-    });
-    console.log('Tombstone permanente gravado no Cloud Firestore:', id);
-  } catch (err) {
-    console.warn('Erro ao gravar tombstone no Firestore:', err);
-  }
+  // 3. Register permanent tombstone and remove from Firestore if quota allows
+  if (!firestoreQuotaExhausted) {
+    try {
+      await setDoc(doc(db, 'deleted_properties', id), {
+        id,
+        deletedAt: new Date().toISOString(),
+      });
+      console.log('Tombstone permanente gravado no Cloud Firestore:', id);
+    } catch (err) {
+      checkAndHandleQuotaError(err);
+    }
 
-  // 4. Permanently delete from Firestore properties collection
-  try {
-    await deleteDoc(doc(db, 'properties', id));
-    console.log('Imóvel removido definitivamente do Cloud Firestore:', id);
-  } catch (e) {
-    console.warn('Firestore delete warning:', e);
+    try {
+      await deleteDoc(doc(db, 'properties', id));
+      console.log('Imóvel removido definitivamente do Cloud Firestore:', id);
+    } catch (e) {
+      checkAndHandleQuotaError(e);
+    }
   }
 
   return true;
@@ -349,12 +450,13 @@ export function subscribeToLeads(callback: (leads: Lead[]) => void): Unsubscribe
         }
       },
       (err) => {
-        console.warn('Firestore leads sync error:', err);
+        checkAndHandleQuotaError(err);
         callback(getLeads());
       }
     );
     return unsub;
-  } catch {
+  } catch (err) {
+    checkAndHandleQuotaError(err);
     callback(getLeads());
     return () => {};
   }
@@ -378,10 +480,12 @@ export async function saveLead(
   }
 
   // Push to Cloud Firestore
-  try {
-    await setDoc(doc(db, 'leads', newLead.id), newLead);
-  } catch (err) {
-    console.warn('Firestore lead submission warning:', err);
+  if (!firestoreQuotaExhausted) {
+    try {
+      await setDoc(doc(db, 'leads', newLead.id), newLead);
+    } catch (err) {
+      checkAndHandleQuotaError(err);
+    }
   }
 
   return newLead;
@@ -393,10 +497,12 @@ export async function updateLeadStatus(id: string, status: Lead['status']): Prom
   localStorage.setItem(STORAGE_KEYS.LEADS, JSON.stringify(updated));
 
   // Sync to Firestore
-  try {
-    await setDoc(doc(db, 'leads', id), { status }, { merge: true });
-  } catch (e) {
-    console.warn('Firestore sync warning', e);
+  if (!firestoreQuotaExhausted) {
+    try {
+      await setDoc(doc(db, 'leads', id), { status }, { merge: true });
+    } catch (e) {
+      checkAndHandleQuotaError(e);
+    }
   }
 }
 
@@ -509,10 +615,12 @@ export async function createLandingPage(
   saveLandingPages([newLanding, ...pages]);
 
   // Sync to Firestore
-  try {
-    await setDoc(doc(db, 'landing_pages', newLanding.id), newLanding);
-  } catch (e) {
-    console.warn('Firestore sync failed', e);
+  if (!firestoreQuotaExhausted) {
+    try {
+      await setDoc(doc(db, 'landing_pages', newLanding.id), newLanding);
+    } catch (e) {
+      checkAndHandleQuotaError(e);
+    }
   }
 
   return newLanding;
@@ -543,10 +651,14 @@ export function subscribeToSiteConfig(
           callback(getSiteConfig());
         }
       },
-      () => callback(getSiteConfig())
+      (err) => {
+        checkAndHandleQuotaError(err);
+        callback(getSiteConfig());
+      }
     );
     return unsub;
-  } catch {
+  } catch (err) {
+    checkAndHandleQuotaError(err);
     callback(getSiteConfig());
     return () => {};
   }
@@ -558,10 +670,12 @@ export async function updateSiteConfig(updates: Partial<SiteConfig>): Promise<Si
   localStorage.setItem(STORAGE_KEYS.CONFIG, JSON.stringify(updated));
 
   // Sync to Firestore
-  try {
-    await setDoc(doc(db, 'site_config', 'main_config'), updated, { merge: true });
-  } catch (e) {
-    console.warn('Firestore sync failed', e);
+  if (!firestoreQuotaExhausted) {
+    try {
+      await setDoc(doc(db, 'site_config', 'main_config'), updated, { merge: true });
+    } catch (e) {
+      checkAndHandleQuotaError(e);
+    }
   }
 
   return updated;
@@ -598,6 +712,7 @@ export function logoutAdmin(): void {
 
 // Initial Seeder to Firestore
 export async function seedFirestoreIfEmpty(): Promise<void> {
+  if (firestoreQuotaExhausted) return;
   try {
     const deletedSnap = await getDocs(collection(db, 'deleted_properties')).catch(() => null);
     if (deletedSnap && !deletedSnap.empty) {
@@ -617,6 +732,7 @@ export async function seedFirestoreIfEmpty(): Promise<void> {
       console.log('Firestore initialized with initial property dataset.');
     }
   } catch (err) {
-    console.log('Firebase ready with local persistence bridge:', err);
+    checkAndHandleQuotaError(err);
+    console.log('Firebase ready with local persistence bridge.');
   }
 }

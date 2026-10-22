@@ -85,11 +85,19 @@ export async function uploadPropertyPhoto(
       });
       wasWatermarked = true;
     } catch (e) {
-      console.warn("Watermark failed, continuing with original file:", e);
-      processedDataUrl = await readFileAsDataUrl(file);
+      console.warn("Watermark failed, compressing image without watermark:", e);
+      try {
+        processedDataUrl = await applyWatermarkToImage(file, { opacity: 0 });
+      } catch {
+        processedDataUrl = await readFileAsDataUrl(file);
+      }
     }
   } else {
-    processedDataUrl = await readFileAsDataUrl(file);
+    try {
+      processedDataUrl = await applyWatermarkToImage(file, { opacity: 0 });
+    } catch {
+      processedDataUrl = await readFileAsDataUrl(file);
+    }
   }
 
   const token = customToken || getActiveBlobToken();
