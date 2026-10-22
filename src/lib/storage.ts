@@ -357,14 +357,11 @@ export async function addProperty(
   const updated = [newProp, ...props.filter((p) => p.id !== newProp.id)];
   saveProperties(updated);
 
-  // Sync to Cloud Firestore if quota allows
+  // Sync to Cloud Firestore in background (non-blocking so UI never hangs)
   if (!firestoreQuotaExhausted) {
-    try {
-      await setDoc(doc(db, 'properties', newProp.id), newProp);
-      console.log('Imóvel publicado no Cloud Firestore com sucesso:', newProp.id);
-    } catch (e) {
+    setDoc(doc(db, 'properties', newProp.id), newProp).catch((e) => {
       checkAndHandleQuotaError(e);
-    }
+    });
   }
 
   return newProp;
@@ -388,14 +385,11 @@ export async function updateProperty(
   props[index] = updatedProp;
   saveProperties(props);
 
-  // Sync to Firestore
+  // Sync to Firestore in background (non-blocking)
   if (!firestoreQuotaExhausted) {
-    try {
-      await setDoc(doc(db, 'properties', id), updatedProp, { merge: true });
-      console.log('Imóvel atualizado no Cloud Firestore:', id);
-    } catch (e) {
+    setDoc(doc(db, 'properties', id), updatedProp, { merge: true }).catch((e) => {
       checkAndHandleQuotaError(e);
-    }
+    });
   }
 
   return updatedProp;
@@ -410,24 +404,14 @@ export async function deleteProperty(id: string): Promise<boolean> {
   const filtered = props.filter((p) => p.id !== id);
   saveProperties(filtered);
 
-  // 3. Register permanent tombstone and remove from Firestore if quota allows
+  // 3. Register permanent tombstone and remove from Firestore in background (non-blocking)
   if (!firestoreQuotaExhausted) {
-    try {
-      await setDoc(doc(db, 'deleted_properties', id), {
-        id,
-        deletedAt: new Date().toISOString(),
-      });
-      console.log('Tombstone permanente gravado no Cloud Firestore:', id);
-    } catch (err) {
-      checkAndHandleQuotaError(err);
-    }
+    setDoc(doc(db, 'deleted_properties', id), {
+      id,
+      deletedAt: new Date().toISOString(),
+    }).catch((err) => checkAndHandleQuotaError(err));
 
-    try {
-      await deleteDoc(doc(db, 'properties', id));
-      console.log('Imóvel removido definitivamente do Cloud Firestore:', id);
-    } catch (e) {
-      checkAndHandleQuotaError(e);
-    }
+    deleteDoc(doc(db, 'properties', id)).catch((e) => checkAndHandleQuotaError(e));
   }
 
   return true;
