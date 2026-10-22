@@ -52,6 +52,17 @@ service cloud.firestore {
       allow delete: if isValidId(propertyId);
     }
 
+    // Deleted Properties (Permanent Tombstones) - Public Read & Write
+    match /deleted_properties/{propertyId} {
+      allow read: if true;
+      allow write: if isValidId(propertyId);
+    }
+
+    // Health check / Connection test document
+    match /test/{testId} {
+      allow read: if true;
+    }
+
     // Leads Collection - Public Create with strict validation, Read/Manage for admin
     match /leads/{leadId} {
       allow create: if isValidId(leadId) && isValidLead(incoming());

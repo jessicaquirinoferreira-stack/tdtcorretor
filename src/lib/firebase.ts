@@ -1,12 +1,18 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
+import { initializeFirestore, doc, getDocFromServer } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-/* CRITICAL: The app will break without this line */
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+/* CRITICAL: The app will break without this line. Configured with auto-detect long polling for resilient connection */
+export const db = initializeFirestore(
+  app,
+  {
+    experimentalAutoDetectLongPolling: true,
+  },
+  firebaseConfig.firestoreDatabaseId
+);
 
 export enum OperationType {
   CREATE = 'create',

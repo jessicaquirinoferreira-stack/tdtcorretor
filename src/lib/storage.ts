@@ -14,6 +14,8 @@ import {
 
 const STORAGE_KEYS = {
   PROPERTIES: 'tft_properties_v1',
+  DELETED_PROPERTIES: 'tft_deleted_properties_v1',
+  INITIALIZED: 'tft_initialized_v1',
   LEADS: 'tft_leads_v1',
   LANDING_PAGES: 'tft_landings_v1',
   CONFIG: 'tft_config_v1',
@@ -46,24 +48,66 @@ export function formatPropertyPrice(price?: string): string {
   return trimmed;
 }
 
+// Tombstone management to permanently prevent deleted properties from resurrecting
+export function getDeletedPropertyIds(): Set<string> {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.DELETED_PROPERTIES);
+    if (raw) {
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)) {
+        return new Set(arr.filter((id) => typeof id === 'string'));
+      }
+    }
+  } catch (e) {
+    console.error('Failed to parse deleted properties', e);
+  }
+  return new Set<string>();
+}
+
+export function markPropertyAsDeletedLocally(id: string): void {
+  try {
+    const current = getDeletedPropertyIds();
+    current.add(id);
+    localStorage.setItem(
+      STORAGE_KEYS.DELETED_PROPERTIES,
+      JSON.stringify(Array.from(current))
+    );
+  } catch (e) {
+    console.error('Failed to save deleted property id locally', e);
+  }
+}
+
 // Properties
 export function getProperties(): Property[] {
   try {
+    const deleted = getDeletedPropertyIds();
     const raw = localStorage.getItem(STORAGE_KEYS.PROPERTIES);
     if (!raw) {
-      saveProperties(INITIAL_PROPERTIES);
-      return INITIAL_PROPERTIES;
+      // If already initialized before, or if any deletions exist, don't resurrect INITIAL_PROPERTIES
+      const isInitialized = localStorage.getItem(STORAGE_KEYS.INITIALIZED);
+      if (isInitialized || deleted.size > 0) {
+        return [];
+      }
+      const initial = INITIAL_PROPERTIES.filter((p) => !deleted.has(p.id));
+      saveProperties(initial);
+      return initial;
     }
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : INITIAL_PROPERTIES;
+    if (Array.isArray(parsed)) {
+      return parsed.filter((p) => p && p.id && !deleted.has(p.id));
+    }
+    return [];
   } catch {
-    return INITIAL_PROPERTIES;
+    return [];
   }
 }
 
 export function saveProperties(props: Property[]): void {
   try {
-    localStorage.setItem(STORAGE_KEYS.PROPERTIES, JSON.stringify(props));
+    const deleted = getDeletedPropertyIds();
+    const cleanProps = props.filter((p) => p && p.id && !deleted.has(p.id));
+    localStorage.setItem(STORAGE_KEYS.PROPERTIES, JSON.stringify(cleanProps));
+    localStorage.setItem(STORAGE_KEYS.INITIALIZED, 'true');
   } catch (e) {
     console.error('Failed to save properties to localStorage', e);
   }
@@ -78,50 +122,87 @@ export function getPropertyBySlug(slug: string): Property | undefined {
 export function subscribeToProperties(
   callback: (properties: Property[]) => void
 ): Unsubscribe {
+  let unsubProps: Unsubscribe = () => {};
+  let unsubTombstones: Unsubscribe = () => {};
+
   try {
-    const unsub = onSnapshot(
+    // 1. Listen for deleted properties (tombstones) across all devices
+    unsubTombstones = onSnapshot(
+      collection(db, 'deleted_properties'),
+      (tombstoneSnap) => {
+        try {
+          const localDeleted = getDeletedPropertyIds();
+          let changed = false;
+          tombstoneSnap.forEach((docSnap) => {
+            if (!localDeleted.has(docSnap.id)) {
+              localDeleted.add(docSnap.id);
+              changed = true;
+            }
+          });
+
+          if (changed) {
+            localStorage.setItem(
+              STORAGE_KEYS.DELETED_PROPERTIES,
+              JSON.stringify(Array.from(localDeleted))
+            );
+            // Re-filter local properties
+            const currentProps = getProperties();
+            const cleanProps = currentProps.filter((p) => !localDeleted.has(p.id));
+            if (cleanProps.length !== currentProps.length) {
+              saveProperties(cleanProps);
+              callback(cleanProps);
+            }
+          }
+        } catch (tombstoneErr) {
+          console.warn('Error processing deleted_properties snapshot:', tombstoneErr);
+        }
+      },
+      (err) => console.warn('deleted_properties snapshot listener error:', err)
+    );
+
+    // 2. Listen for properties collection
+    unsubProps = onSnapshot(
       collection(db, 'properties'),
       async (snapshot) => {
         try {
-          const localProps = getProperties();
+          const deleted = getDeletedPropertyIds();
 
           if (snapshot.empty) {
-            // First time initialization in Cloud Firestore
-            console.log('Firestore properties empty. Seeding dataset...');
-            for (const p of localProps) {
-              await setDoc(doc(db, 'properties', p.id), p).catch((e) =>
-                console.warn('Seed doc error', e)
-              );
+            const isInitialized = localStorage.getItem(STORAGE_KEYS.INITIALIZED);
+            // Only seed if brand-new, never initialized, and no deletions occurred
+            if (!isInitialized && deleted.size === 0) {
+              console.log('Firestore properties empty on fresh install. Seeding initial dataset...');
+              const initialToSeed = INITIAL_PROPERTIES.filter((p) => !deleted.has(p.id));
+              for (const p of initialToSeed) {
+                await setDoc(doc(db, 'properties', p.id), p).catch((e) =>
+                  console.warn('Seed doc error', e)
+                );
+              }
+              saveProperties(initialToSeed);
+              callback(initialToSeed);
+              return;
             }
-            callback(localProps);
+            // Admin intentionally deleted all properties or database is empty
+            saveProperties([]);
+            callback([]);
             return;
           }
 
           const remoteProps: Property[] = [];
-          snapshot.forEach((docSnap) => {
+          for (const docSnap of snapshot.docs) {
+            const propId = docSnap.id;
+            // If this property was marked as deleted, ensure it's removed and NEVER displayed
+            if (deleted.has(propId)) {
+              deleteDoc(doc(db, 'properties', propId)).catch(() => {});
+              continue;
+            }
+
             const data = docSnap.data() as Property;
             remoteProps.push({
               ...data,
-              id: docSnap.id || data.id,
+              id: propId || data.id,
               price: formatPropertyPrice(data.price),
             });
-          });
-
-          // Check if any local property uploaded previously by admin is missing in Firestore
-          const missingInFirestore = localProps.filter(
-            (lp) => !remoteProps.some((rp) => rp.id === lp.id)
-          );
-
-          if (missingInFirestore.length > 0) {
-            console.log(
-              `Syncing ${missingInFirestore.length} locally created properties to Cloud Firestore...`
-            );
-            for (const missing of missingInFirestore) {
-              remoteProps.push(missing);
-              await setDoc(doc(db, 'properties', missing.id), missing).catch((err) =>
-                console.warn('Sync missing prop warning:', err)
-              );
-            }
           }
 
           // Sort by creation date descending
@@ -131,7 +212,7 @@ export function subscribeToProperties(
             return timeB - timeA;
           });
 
-          // Cache locally and notify all subscribers
+          // Cache locally and notify subscribers
           saveProperties(remoteProps);
           callback(remoteProps);
         } catch (innerErr) {
@@ -145,7 +226,10 @@ export function subscribeToProperties(
       }
     );
 
-    return unsub;
+    return () => {
+      unsubProps();
+      unsubTombstones();
+    };
   } catch (err) {
     console.warn('Could not attach Firestore listener:', err);
     callback(getProperties());
@@ -209,15 +293,29 @@ export async function updateProperty(
 }
 
 export async function deleteProperty(id: string): Promise<boolean> {
+  // 1. Mark in permanent tombstone locally
+  markPropertyAsDeletedLocally(id);
+
+  // 2. Remove from local properties immediately
   const props = getProperties();
   const filtered = props.filter((p) => p.id !== id);
-  if (filtered.length === props.length) return false;
   saveProperties(filtered);
 
-  // Delete from Firestore
+  // 3. Register permanent tombstone in Firestore (so no other client can ever resurrect it)
+  try {
+    await setDoc(doc(db, 'deleted_properties', id), {
+      id,
+      deletedAt: new Date().toISOString(),
+    });
+    console.log('Tombstone permanente gravado no Cloud Firestore:', id);
+  } catch (err) {
+    console.warn('Erro ao gravar tombstone no Firestore:', err);
+  }
+
+  // 4. Permanently delete from Firestore properties collection
   try {
     await deleteDoc(doc(db, 'properties', id));
-    console.log('Imóvel removido do Cloud Firestore:', id);
+    console.log('Imóvel removido definitivamente do Cloud Firestore:', id);
   } catch (e) {
     console.warn('Firestore delete warning:', e);
   }
@@ -501,9 +599,19 @@ export function logoutAdmin(): void {
 // Initial Seeder to Firestore
 export async function seedFirestoreIfEmpty(): Promise<void> {
   try {
+    const deletedSnap = await getDocs(collection(db, 'deleted_properties')).catch(() => null);
+    if (deletedSnap && !deletedSnap.empty) {
+      // User or admin has already performed deletions; do not seed
+      return;
+    }
+    const localDeleted = getDeletedPropertyIds();
+    if (localDeleted.size > 0) {
+      return;
+    }
     const snap = await getDocs(collection(db, 'properties'));
     if (snap.empty) {
-      for (const p of INITIAL_PROPERTIES) {
+      const initialToSeed = INITIAL_PROPERTIES.filter((p) => !localDeleted.has(p.id));
+      for (const p of initialToSeed) {
         await setDoc(doc(db, 'properties', p.id), p);
       }
       console.log('Firestore initialized with initial property dataset.');
