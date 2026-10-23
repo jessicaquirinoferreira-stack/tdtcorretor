@@ -230,7 +230,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
       const isConsult = !rawPrice || rawPrice.toLowerCase().includes('consultar');
       const finalPrice = isConsult ? 'A consultar' : rawPrice;
 
-      const propData = {
+      const propData: any = {
         slug: slug || `imovel-${Date.now()}`,
         title: propForm.title.trim(),
         type: propForm.type,
@@ -239,19 +239,29 @@ export const AdminPage: React.FC<AdminPageProps> = ({
         location: {
           city: propForm.city.trim() || 'Coronel Fabriciano',
           state: propForm.state.trim() || 'Minas Gerais',
-          neighborhood: propForm.neighborhood.trim(),
+          neighborhood: propForm.neighborhood.trim() || '',
         },
         area: propForm.area.trim() || 'Sob consulta',
-        bedrooms: propForm.bedrooms ? (isNaN(Number(propForm.bedrooms)) ? propForm.bedrooms : Number(propForm.bedrooms)) : undefined,
-        bathrooms: propForm.bathrooms ? (isNaN(Number(propForm.bathrooms)) ? propForm.bathrooms : Number(propForm.bathrooms)) : undefined,
-        garages: propForm.garages ? (isNaN(Number(propForm.garages)) ? propForm.garages : Number(propForm.garages)) : undefined,
         description: propForm.description.trim() || 'Excelente imóvel em localização privilegiada.',
         features: feats.length > 0 ? feats : ['Excelente localização', 'Acabamento diferenciado'],
         images: finalImages,
         coverImage: finalCover,
-        isFeatured: propForm.isFeatured,
+        isFeatured: !!propForm.isFeatured,
         status: 'published' as const,
       };
+
+      if (propForm.bedrooms && propForm.bedrooms.trim() !== '') {
+        const val = Number(propForm.bedrooms);
+        propData.bedrooms = isNaN(val) ? propForm.bedrooms.trim() : val;
+      }
+      if (propForm.bathrooms && propForm.bathrooms.trim() !== '') {
+        const val = Number(propForm.bathrooms);
+        propData.bathrooms = isNaN(val) ? propForm.bathrooms.trim() : val;
+      }
+      if (propForm.garages && propForm.garages.trim() !== '') {
+        const val = Number(propForm.garages);
+        propData.garages = isNaN(val) ? propForm.garages.trim() : val;
+      }
 
       if (editingPropertyId) {
         await updateProperty(editingPropertyId, propData);

@@ -144,9 +144,31 @@ export function getPropertyBySlug(slug: string): Property | undefined {
   return props.find((p) => p.slug === slug || p.id === slug);
 }
 
-// Ensure property document never exceeds Firestore's 1MB limit (1,048,576 bytes)
+// Helper to recursively strip any undefined values from objects/arrays so Firestore setDoc never throws
+export function removeUndefinedDeep<T>(obj: T): T {
+  if (obj === null || obj === undefined) {
+    return obj;
+  }
+  if (Array.isArray(obj)) {
+    return obj
+      .filter((item) => item !== undefined)
+      .map((item) => removeUndefinedDeep(item)) as unknown as T;
+  }
+  if (typeof obj === 'object') {
+    const clean: Record<string, any> = {};
+    for (const [key, value] of Object.entries(obj)) {
+      if (value !== undefined) {
+        clean[key] = removeUndefinedDeep(value);
+      }
+    }
+    return clean as unknown as T;
+  }
+  return obj;
+}
+
+// Ensure property document never exceeds Firestore's 1MB limit (1,048,576 bytes) and has zero undefined fields
 export function preparePropertyForFirestore(prop: Property): Property {
-  const safeImages = Array.isArray(prop.images) ? prop.images : (prop.coverImage ? [prop.coverImage] : []);
+  const safeImages = Array.isArray(prop.images) ? prop.images.filter(Boolean) : (prop.coverImage ? [prop.coverImage] : []);
   const coverImage = prop.coverImage || safeImages[0] || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80';
   const location = prop.location || { city: 'Coronel Fabriciano', state: 'Minas Gerais' };
 
@@ -155,12 +177,15 @@ export function preparePropertyForFirestore(prop: Property): Property {
     images: safeImages,
     coverImage,
     location,
-    features: Array.isArray(prop.features) ? prop.features : [],
+    features: Array.isArray(prop.features) ? prop.features.filter(Boolean) : [],
     price: formatPropertyPrice(prop.price),
   };
-  let serialized = JSON.stringify(safeProp);
+
+  // Strip all undefined values
+  safeProp = removeUndefinedDeep(safeProp);
 
   // If size exceeds 750KB (e.g. contains large local base64 fallback photos), trim extra photos safely
+  let serialized = JSON.stringify(safeProp);
   if (serialized.length > 750000 && safeProp.images && safeProp.images.length > 1) {
     console.warn(
       `[Firestore Payload] Property ${prop.id} payload is ${serialized.length} bytes. Compacting to guarantee safe Firestore sync under 1MB.`
@@ -176,7 +201,7 @@ export function preparePropertyForFirestore(prop: Property): Property {
       };
     }
   }
-  return safeProp;
+  return removeUndefinedDeep(safeProp);
 }
 
 let firestoreQuotaExhausted = false;
@@ -387,7 +412,8 @@ export async function addProperty(
 
   // 1. Direct Cloud Firestore write so it is instantly published for all users globally on Vercel
   try {
-    await setDoc(doc(db, 'properties', newProp.id), newProp);
+    const cleanDoc = removeUndefinedDeep(newProp);
+    await setDoc(doc(db, 'properties', newProp.id), cleanDoc);
     console.log('Imóvel publicado com sucesso no Cloud Firestore:', newProp.id);
   } catch (cloudErr) {
     console.error('Erro ao gravar no Cloud Firestore:', cloudErr);
@@ -421,7 +447,8 @@ export async function updateProperty(
 
   // Sync to Cloud Firestore
   try {
-    await setDoc(doc(db, 'properties', id), updatedProp, { merge: true });
+    const cleanDoc = removeUndefinedDeep(updatedProp);
+    await setDoc(doc(db, 'properties', id), cleanDoc, { merge: true });
     console.log('Imóvel atualizado no Cloud Firestore:', id);
   } catch (e) {
     console.error('Falha ao atualizar no Cloud Firestore:', e);
@@ -519,7 +546,7 @@ export async function saveLead(
   // Push to Cloud Firestore
   if (!firestoreQuotaExhausted) {
     try {
-      await setDoc(doc(db, 'leads', newLead.id), newLead);
+      await setDoc(doc(db, 'leads', newLead.id), removeUndefinedDeep(newLead));
     } catch (err) {
       checkAndHandleQuotaError(err);
     }
