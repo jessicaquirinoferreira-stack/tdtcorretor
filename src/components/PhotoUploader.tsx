@@ -48,6 +48,7 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const safeImages = Array.isArray(images) ? images : [];
   const hasBlobToken = !!getActiveBlobToken();
 
   const handleFiles = async (files: FileList | null) => {
@@ -77,7 +78,7 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
     }
 
     if (newUploadedUrls.length > 0) {
-      const updated = [...images, ...newUploadedUrls];
+      const updated = [...safeImages, ...newUploadedUrls];
       onChangeImages(updated);
 
       // If no cover image set, make first uploaded the cover
@@ -108,8 +109,8 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
   };
 
   const handleRemoveImage = (indexToRemove: number) => {
-    const targetUrl = images[indexToRemove];
-    const filtered = images.filter((_, idx) => idx !== indexToRemove);
+    const targetUrl = safeImages[indexToRemove];
+    const filtered = safeImages.filter((_, idx) => idx !== indexToRemove);
     onChangeImages(filtered);
 
     // If removed photo was cover, select new cover
@@ -123,11 +124,11 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
   };
 
   const handleWatermarkSinglePhoto = async (index: number) => {
-    const currentUrl = images[index];
+    const currentUrl = safeImages[index];
     try {
       setUploadProgress(`Aplicando marca d'água na foto ${index + 1}...`);
       const watermarked = await watermarkExistingPhoto(currentUrl);
-      const updated = [...images];
+      const updated = [...safeImages];
       updated[index] = watermarked;
       onChangeImages(updated);
 
@@ -143,11 +144,11 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
   };
 
   const handleBatchApplyWatermark = async () => {
-    if (images.length === 0) return;
+    if (safeImages.length === 0) return;
     setIsApplyingBatchWatermark(true);
     setUploadProgress("Aplicando marca d'água em todas as fotos do empreendimento...");
 
-    const updated = [...images];
+    const updated = [...safeImages];
     let count = 0;
 
     for (let i = 0; i < updated.length; i++) {
@@ -166,7 +167,7 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
     onChangeImages(updated);
     if (updated[0] && coverImage) {
       // Refresh cover if modified
-      const coverIndex = images.indexOf(coverImage);
+      const coverIndex = safeImages.indexOf(coverImage);
       if (coverIndex !== -1 && updated[coverIndex]) {
         onChangeCoverImage(updated[coverIndex]);
       }
@@ -181,7 +182,7 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
     e.preventDefault();
     if (!manualUrlInput.trim()) return;
     const url = manualUrlInput.trim();
-    const updated = [...images, url];
+    const updated = [...safeImages, url];
     onChangeImages(updated);
     if (!coverImage) onChangeCoverImage(url);
     setManualUrlInput('');
@@ -375,20 +376,20 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
       <div>
         <div className="flex items-center justify-between mb-2">
           <label className="text-xs font-bold text-gray-700 uppercase tracking-wider">
-            Fotos Cadastradas ({images.length})
+            Fotos Cadastradas ({safeImages.length})
           </label>
           <span className="text-[11px] text-gray-500">
             Defina uma foto como capa principal para os cards e destaque
           </span>
         </div>
 
-        {images.length === 0 ? (
+        {safeImages.length === 0 ? (
           <div className="p-8 text-center bg-gray-50 rounded-xl border border-dashed border-gray-300 text-xs text-gray-500">
             Nenhuma foto adicionada ainda. Use o campo acima para carregar fotos do dispositivo ou colar links.
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-            {images.map((imgUrl, idx) => {
+            {safeImages.map((imgUrl, idx) => {
               const isCover = coverImage === imgUrl || (!coverImage && idx === 0);
 
               return (

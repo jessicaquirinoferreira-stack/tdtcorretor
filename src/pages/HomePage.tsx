@@ -70,17 +70,19 @@ export const HomePage: React.FC<HomePageProps> = ({
     });
 
     for (const p of sorted) {
-      const pImages = p.images && p.images.length > 0 ? p.images : (p.coverImage ? [p.coverImage] : []);
+      const pImages = Array.isArray(p.images) && p.images.length > 0 ? p.images : (p.coverImage ? [p.coverImage] : []);
       if (pImages[0]) {
+        const pCity = p.location?.city || 'Coronel Fabriciano';
+        const pNeigh = p.location?.neighborhood ? ` · ${p.location.neighborhood}` : '';
         list.push({
           id: `slide-${p.id}`,
           image: pImages[0],
-          title: p.title,
-          propertyTitle: p.title,
-          location: `${p.location.city}${p.location.neighborhood ? ` · ${p.location.neighborhood}` : ''}`,
+          title: p.title || 'Empreendimento',
+          propertyTitle: p.title || 'Empreendimento',
+          location: `${pCity}${pNeigh}`,
           badge: p.isFeatured ? 'Destaque Oficial' : (p.isConceptual ? 'Estudo Conceitual' : 'Oportunidade'),
           area: p.area || `${p.bedrooms ? `${p.bedrooms} Quartos` : 'Consulte'}`,
-          slug: p.slug,
+          slug: p.slug || p.id,
         });
       }
       if (list.length >= 8) break;
@@ -144,12 +146,16 @@ export const HomePage: React.FC<HomePageProps> = ({
     onNavigate(`/imoveis/${slug}`);
   };
 
-  // Show featured properties first, or newest if none are explicitly featured
+  // Show featured properties and newest published properties first
   const featuredProperties = useMemo(() => {
-    const feat = properties.filter((p) => p.isFeatured);
-    if (feat.length >= 3) return feat.slice(0, 6);
-    const nonFeat = properties.filter((p) => !p.isFeatured);
-    return [...feat, ...nonFeat].slice(0, 6);
+    const sorted = [...properties].sort((a, b) => {
+      const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return timeB - timeA;
+    });
+    const feat = sorted.filter((p) => p.isFeatured);
+    const nonFeat = sorted.filter((p) => !p.isFeatured);
+    return [...feat, ...nonFeat].slice(0, 12);
   }, [properties]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {

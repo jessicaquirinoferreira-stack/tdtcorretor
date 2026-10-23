@@ -11,13 +11,16 @@ interface PropertyCardProps {
 
 export const PropertyCard: React.FC<PropertyCardProps> = ({ property, onSelect }) => {
   const whatsAppUrl = getWhatsAppUrl('imovel', { propertyTitle: property.title });
+  const images = Array.isArray(property.images) ? property.images : [];
+  const coverImage = property.coverImage || images[0] || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80';
+  const location = property.location || { city: 'Coronel Fabriciano', state: 'Minas Gerais' };
 
   return (
     <div className="group bg-white rounded-xl overflow-hidden border border-gray-200/80 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col h-full">
       {/* Image Container with aspect ratio */}
       <div className="relative aspect-[16/10] overflow-hidden bg-gray-100 cursor-pointer" onClick={() => onSelect(property)}>
         <img
-          src={property.coverImage || property.images[0]}
+          src={coverImage}
           alt={property.title}
           referrerPolicy="no-referrer"
           className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
@@ -57,7 +60,7 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({ property, onSelect }
           </div>
 
           <div className="text-xs font-mono text-gray-200">
-            {property.images.length} {property.images.length === 1 ? 'foto' : 'fotos'}
+            {images.length} {images.length === 1 ? 'foto' : 'fotos'}
           </div>
         </div>
       </div>
@@ -76,8 +79,8 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({ property, onSelect }
         <div className="flex items-center gap-1 text-xs text-gray-500 mb-3.5">
           <MapPin className="w-3.5 h-3.5 text-[#C8A251] shrink-0" />
           <span className="truncate">
-            {property.location.neighborhood ? `${property.location.neighborhood}, ` : ''}
-            {property.location.city} - {property.location.state}
+            {location.neighborhood ? `${location.neighborhood}, ` : ''}
+            {location.city} - {location.state}
           </span>
         </div>
 

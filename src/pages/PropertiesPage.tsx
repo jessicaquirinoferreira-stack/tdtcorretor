@@ -26,12 +26,13 @@ export const PropertiesPage: React.FC<PropertiesPageProps> = ({
   const filteredProperties = useMemo(() => {
     return properties.filter((prop) => {
       // Text search
+      const propCity = prop.location?.city || '';
       if (searchTerm.trim()) {
         const query = searchTerm.toLowerCase();
-        const matchTitle = prop.title.toLowerCase().includes(query);
-        const matchDesc = prop.description.toLowerCase().includes(query);
-        const matchCity = prop.location.city.toLowerCase().includes(query);
-        const matchType = prop.type.toLowerCase().includes(query);
+        const matchTitle = (prop.title || '').toLowerCase().includes(query);
+        const matchDesc = (prop.description || '').toLowerCase().includes(query);
+        const matchCity = propCity.toLowerCase().includes(query);
+        const matchType = (prop.type || '').toLowerCase().includes(query);
         if (!matchTitle && !matchDesc && !matchCity && !matchType) return false;
       }
 
@@ -48,7 +49,7 @@ export const PropertiesPage: React.FC<PropertiesPageProps> = ({
 
       // City
       if (city !== 'Todas') {
-        if (!prop.location.city.toLowerCase().includes(city.toLowerCase())) {
+        if (!propCity.toLowerCase().includes(city.toLowerCase())) {
           return false;
         }
       }

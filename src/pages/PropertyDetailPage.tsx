@@ -42,9 +42,13 @@ export const PropertyDetailPage: React.FC<PropertyDetailPageProps> = ({
   const [copiedLink, setCopiedLink] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const images = property.images && property.images.length > 0
-    ? property.images
-    : [property.coverImage];
+  const rawImages = Array.isArray(property.images) && property.images.length > 0
+    ? property.images.filter(Boolean)
+    : [];
+  const images = rawImages.length > 0
+    ? rawImages
+    : [property.coverImage || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80'];
+  const location = property.location || { city: 'Coronel Fabriciano', state: 'Minas Gerais' };
 
   const whatsAppInquiryUrl = getWhatsAppUrl('imovel', { propertyTitle: property.title });
   const whatsAppScheduleUrl = getWhatsAppUrl('agendamento', { propertyTitle: property.title });
@@ -201,9 +205,9 @@ export const PropertyDetailPage: React.FC<PropertyDetailPageProps> = ({
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <MapPin className="w-4 h-4 text-[#C8A251] shrink-0" />
               <span>
-                {property.location.neighborhood ? `${property.location.neighborhood}, ` : ''}
-                {property.location.city} - {property.location.state}
-                {property.location.isApproximate && ' (Localização detalhada mediante consulta)'}
+                {location.neighborhood ? `${location.neighborhood}, ` : ''}
+                {location.city || 'Coronel Fabriciano'} - {location.state || 'Minas Gerais'}
+                {location.isApproximate && ' (Localização detalhada mediante consulta)'}
               </span>
             </div>
           </div>

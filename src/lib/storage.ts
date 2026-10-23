@@ -95,7 +95,19 @@ export function getProperties(): Property[] {
     }
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed)) {
-      return parsed.filter((p) => p && p.id && !deleted.has(p.id));
+      return parsed
+        .filter((p) => p && p.id && !deleted.has(p.id))
+        .map((p) => {
+          const safeImages = Array.isArray(p.images) ? p.images : (p.coverImage ? [p.coverImage] : []);
+          return {
+            ...p,
+            images: safeImages,
+            coverImage: p.coverImage || safeImages[0] || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80',
+            location: p.location || { city: 'Coronel Fabriciano', state: 'Minas Gerais' },
+            features: Array.isArray(p.features) ? p.features : [],
+            price: formatPropertyPrice(p.price),
+          };
+        });
     }
     return [];
   } catch {
@@ -116,7 +128,7 @@ export function saveProperties(props: Property[]): void {
       // If browser quota exceeded, save lightweight version with cover + first 4 photos
       const lightweight = cleanProps.map((p) => ({
         ...p,
-        images: p.images && p.images.length > 4 ? p.images.slice(0, 4) : p.images,
+        images: Array.isArray(p.images) && p.images.length > 4 ? p.images.slice(0, 4) : (p.images || []),
       }));
       localStorage.setItem(STORAGE_KEYS.PROPERTIES, JSON.stringify(lightweight));
       localStorage.setItem(STORAGE_KEYS.INITIALIZED, 'true');
@@ -134,7 +146,18 @@ export function getPropertyBySlug(slug: string): Property | undefined {
 
 // Ensure property document never exceeds Firestore's 1MB limit (1,048,576 bytes)
 export function preparePropertyForFirestore(prop: Property): Property {
-  let safeProp = { ...prop };
+  const safeImages = Array.isArray(prop.images) ? prop.images : (prop.coverImage ? [prop.coverImage] : []);
+  const coverImage = prop.coverImage || safeImages[0] || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80';
+  const location = prop.location || { city: 'Coronel Fabriciano', state: 'Minas Gerais' };
+
+  let safeProp: Property = {
+    ...prop,
+    images: safeImages,
+    coverImage,
+    location,
+    features: Array.isArray(prop.features) ? prop.features : [],
+    price: formatPropertyPrice(prop.price),
+  };
   let serialized = JSON.stringify(safeProp);
 
   // If size exceeds 750KB (e.g. contains large local base64 fallback photos), trim extra photos safely
@@ -142,7 +165,6 @@ export function preparePropertyForFirestore(prop: Property): Property {
     console.warn(
       `[Firestore Payload] Property ${prop.id} payload is ${serialized.length} bytes. Compacting to guarantee safe Firestore sync under 1MB.`
     );
-    const cover = safeProp.coverImage || safeProp.images[0] || '';
     let imgs = [...safeProp.images];
 
     while (JSON.stringify(safeProp).length > 750000 && imgs.length > 1) {
@@ -150,7 +172,7 @@ export function preparePropertyForFirestore(prop: Property): Property {
       safeProp = {
         ...safeProp,
         images: imgs,
-        coverImage: cover,
+        coverImage,
       };
     }
   }
@@ -280,9 +302,19 @@ export function subscribeToProperties(
             }
 
             const data = docSnap.data() as Property;
+            const safeImages = Array.isArray(data.images)
+              ? data.images
+              : (data.coverImage ? [data.coverImage] : []);
+            const coverImage = data.coverImage || safeImages[0] || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80';
+            const location = data.location || { city: 'Coronel Fabriciano', state: 'Minas Gerais' };
+
             remoteProps.push({
               ...data,
               id: propId || data.id,
+              images: safeImages,
+              coverImage,
+              location,
+              features: Array.isArray(data.features) ? data.features : [],
               price: formatPropertyPrice(data.price),
             });
           }
@@ -353,16 +385,18 @@ export async function addProperty(
 
   const newProp = preparePropertyForFirestore(rawProp);
 
-  // Immediate local cache update
+  // 1. Direct Cloud Firestore write so it is instantly published for all users globally on Vercel
+  try {
+    await setDoc(doc(db, 'properties', newProp.id), newProp);
+    console.log('Imóvel publicado com sucesso no Cloud Firestore:', newProp.id);
+  } catch (cloudErr) {
+    console.error('Erro ao gravar no Cloud Firestore:', cloudErr);
+    checkAndHandleQuotaError(cloudErr);
+  }
+
+  // 2. Cache in local storage
   const updated = [newProp, ...props.filter((p) => p.id !== newProp.id)];
   saveProperties(updated);
-
-  // Sync to Cloud Firestore in background (non-blocking so UI never hangs)
-  if (!firestoreQuotaExhausted) {
-    setDoc(doc(db, 'properties', newProp.id), newProp).catch((e) => {
-      checkAndHandleQuotaError(e);
-    });
-  }
 
   return newProp;
 }
@@ -385,11 +419,13 @@ export async function updateProperty(
   props[index] = updatedProp;
   saveProperties(props);
 
-  // Sync to Firestore in background (non-blocking)
-  if (!firestoreQuotaExhausted) {
-    setDoc(doc(db, 'properties', id), updatedProp, { merge: true }).catch((e) => {
-      checkAndHandleQuotaError(e);
-    });
+  // Sync to Cloud Firestore
+  try {
+    await setDoc(doc(db, 'properties', id), updatedProp, { merge: true });
+    console.log('Imóvel atualizado no Cloud Firestore:', id);
+  } catch (e) {
+    console.error('Falha ao atualizar no Cloud Firestore:', e);
+    checkAndHandleQuotaError(e);
   }
 
   return updatedProp;
@@ -404,14 +440,22 @@ export async function deleteProperty(id: string): Promise<boolean> {
   const filtered = props.filter((p) => p.id !== id);
   saveProperties(filtered);
 
-  // 3. Register permanent tombstone and remove from Firestore in background (non-blocking)
-  if (!firestoreQuotaExhausted) {
-    setDoc(doc(db, 'deleted_properties', id), {
+  // 3. Delete definitively from Cloud Firestore and record permanent tombstone
+  try {
+    await setDoc(doc(db, 'deleted_properties', id), {
       id,
       deletedAt: new Date().toISOString(),
-    }).catch((err) => checkAndHandleQuotaError(err));
+    });
+    console.log('Tombstone permanente gravado no Cloud Firestore:', id);
+  } catch (err) {
+    console.error('Failed to write tombstone to Firestore:', err);
+  }
 
-    deleteDoc(doc(db, 'properties', id)).catch((e) => checkAndHandleQuotaError(e));
+  try {
+    await deleteDoc(doc(db, 'properties', id));
+    console.log('Imóvel deletado definitivamente do Cloud Firestore:', id);
+  } catch (e) {
+    console.error('Failed to delete doc from Firestore:', e);
   }
 
   return true;

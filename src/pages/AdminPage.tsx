@@ -158,23 +158,25 @@ export const AdminPage: React.FC<AdminPageProps> = ({
   };
 
   const handleStartEditProperty = (p: Property) => {
-    const pImages = p.images && p.images.length > 0 ? p.images : (p.coverImage ? [p.coverImage] : []);
+    const pImages = Array.isArray(p.images) && p.images.length > 0 ? p.images : (p.coverImage ? [p.coverImage] : []);
+    const pLoc = p.location || { city: 'Coronel Fabriciano', state: 'Minas Gerais', neighborhood: '' };
+    const pFeats = Array.isArray(p.features) ? p.features : [];
     setEditingPropertyId(p.id);
     setSaveError(null);
     setPropForm({
-      title: p.title,
-      type: p.type,
-      purpose: p.purpose,
-      price: p.price,
-      city: p.location.city,
-      state: p.location.state,
-      neighborhood: p.location.neighborhood || '',
-      area: p.area,
+      title: p.title || '',
+      type: p.type || 'apartamento',
+      purpose: p.purpose || 'venda',
+      price: p.price || 'A consultar',
+      city: pLoc.city || 'Coronel Fabriciano',
+      state: pLoc.state || 'Minas Gerais',
+      neighborhood: pLoc.neighborhood || '',
+      area: p.area || '',
       bedrooms: String(p.bedrooms ?? ''),
       bathrooms: String(p.bathrooms ?? ''),
       garages: String(p.garages ?? ''),
-      description: p.description,
-      featuresStr: p.features.join('\n'),
+      description: p.description || '',
+      featuresStr: pFeats.join('\n'),
       images: pImages,
       imagesStr: pImages.join('\n'),
       coverImage: p.coverImage || pImages[0] || '',
@@ -823,43 +825,47 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
-                    {properties.map((p) => (
-                      <tr key={p.id} className="hover:bg-gray-50 transition">
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-3">
-                            <div className="w-12 h-10 rounded overflow-hidden bg-gray-100 shrink-0">
-                              <img
-                                src={p.coverImage || p.images[0]}
-                                alt={p.title}
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-                            <div>
-                              <div className="font-bold text-gray-900 flex items-center gap-1.5">
-                                <span>{p.title}</span>
-                                {p.isFeatured && (
-                                  <span className="text-[10px] bg-emerald-100 text-emerald-800 font-medium px-1.5 py-0.2 rounded">
-                                    Destaque
-                                  </span>
-                                )}
+                    {properties.map((p) => {
+                      const pImages = Array.isArray(p.images) ? p.images : [];
+                      const pCover = p.coverImage || pImages[0] || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80';
+                      const pLoc = p.location || { city: 'Minas Gerais', state: 'MG' };
+                      return (
+                        <tr key={p.id} className="hover:bg-gray-50 transition">
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-3">
+                              <div className="w-12 h-10 rounded overflow-hidden bg-gray-100 shrink-0">
+                                <img
+                                  src={pCover}
+                                  alt={p.title}
+                                  className="w-full h-full object-cover"
+                                />
                               </div>
-                              <span className="text-[10px] text-gray-400">/{p.slug}</span>
+                              <div>
+                                <div className="font-bold text-gray-900 flex items-center gap-1.5">
+                                  <span>{p.title}</span>
+                                  {p.isFeatured && (
+                                    <span className="text-[10px] bg-emerald-100 text-emerald-800 font-medium px-1.5 py-0.2 rounded">
+                                      Destaque
+                                    </span>
+                                  )}
+                                </div>
+                                <span className="text-[10px] text-gray-400">/{p.slug}</span>
+                              </div>
                             </div>
-                          </div>
-                        </td>
+                          </td>
 
-                        <td className="px-4 py-3">
-                          <span className="font-medium text-gray-700 block">{p.type}</span>
-                          <span className="text-[10px] text-gray-500">{p.purpose}</span>
-                        </td>
+                          <td className="px-4 py-3">
+                            <span className="font-medium text-gray-700 block">{p.type}</span>
+                            <span className="text-[10px] text-gray-500">{p.purpose}</span>
+                          </td>
 
-                        <td className="px-4 py-3 text-gray-600">
-                          {p.location.neighborhood ? `${p.location.neighborhood}, ` : ''}{p.location.city}
-                        </td>
+                          <td className="px-4 py-3 text-gray-600">
+                            {pLoc.neighborhood ? `${pLoc.neighborhood}, ` : ''}{pLoc.city}
+                          </td>
 
-                        <td className="px-4 py-3 text-gray-600 font-mono">
-                          {p.images.length} fotos
-                        </td>
+                          <td className="px-4 py-3 text-gray-600 font-mono">
+                            {pImages.length} fotos
+                          </td>
 
                         <td className="px-4 py-3 font-semibold text-gray-900">
                           {!p.price || p.price.toLowerCase().includes('consultar') ? (
@@ -907,7 +913,8 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                           </button>
                         </td>
                       </tr>
-                    ))}
+                    );
+                  })}
                   </tbody>
                 </table>
               </div>

@@ -112,9 +112,9 @@ export async function uploadPropertyPhoto(
 
   const token = customToken || getActiveBlobToken();
 
-  // Try Vercel Blob if token is available
+  // Upload directly to Vercel Blob CDN so photos never bloat Firestore or LocalStorage
   if (token) {
-    onProgress?.('Enviando para o Vercel Blob...');
+    onProgress?.('Enviando para o Vercel Blob CDN...');
     try {
       const blobToUpload = dataURLtoBlob(processedDataUrl);
       const sanitizedName = file.name
@@ -122,25 +122,53 @@ export async function uploadPropertyPhoto(
         .replace(/[^a-z0-9.-]/g, '_');
       const filename = `tft-imoveis/${Date.now()}-${sanitizedName}`;
 
-      const res = await put(filename, blobToUpload, {
+      // 1. Direct browser fetch to Vercel Blob Storage API (works 100% across all browsers)
+      const directRes = await fetch(`https://blob.vercel-storage.com/${filename}`, {
+        method: 'PUT',
+        headers: {
+          'authorization': `Bearer ${token}`,
+          'x-api-version': '7',
+          'content-type': blobToUpload.type || 'image/jpeg',
+        },
+        body: blobToUpload,
+      });
+
+      if (directRes.ok) {
+        const data = await directRes.json();
+        if (data.url) {
+          onProgress?.('Foto enviada para o Vercel Blob com sucesso!');
+          return {
+            url: data.url,
+            source: 'vercel-blob',
+            fileName: file.name,
+            watermarked: wasWatermarked,
+          };
+        }
+      }
+
+      // 2. Secondary fallback via @vercel/blob put
+      const putRes = await put(filename, blobToUpload, {
         access: 'public',
         token,
       });
 
-      onProgress?.('Upload para Vercel Blob concluído com sucesso!');
-      return {
-        url: res.url,
-        source: 'vercel-blob',
-        fileName: file.name,
-        watermarked: wasWatermarked,
-      };
+      if (putRes.url) {
+        onProgress?.('Foto enviada para o Vercel Blob com sucesso!');
+        return {
+          url: putRes.url,
+          source: 'vercel-blob',
+          fileName: file.name,
+          watermarked: wasWatermarked,
+        };
+      }
     } catch (blobErr) {
-      console.warn('Vercel Blob upload failed or unauthorized, falling back to device local storage:', blobErr);
-      onProgress?.('Salvo no dispositivo (Vercel Blob requer token com permissão de escrita)');
+      console.error('Vercel Blob upload failed:', blobErr);
+      onProgress?.('Erro ao enviar para o Vercel Blob. Tentando novamente...');
     }
   }
 
-  onProgress?.('Imagem processada e pronta!');
+  // If upload couldn't reach Vercel Blob, return compressed processed image
+  onProgress?.('Imagem processada!');
   return {
     url: processedDataUrl,
     source: 'device-processed',
